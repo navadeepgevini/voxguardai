@@ -10,6 +10,7 @@ export interface SendAlertParams {
   threshold?: number | null;
   inputQualityWarning?: string | null;
   isTest?: boolean;
+  recipientEmail?: string | null;
 }
 
 export interface SendAlertResult {
@@ -26,10 +27,11 @@ const BACKEND_INTERNAL_URL = process.env.BACKEND_INTERNAL_URL || "http://127.0.0
  * Returns safe environment configuration for Resend.
  * Strictly never returns or leaks the raw API key.
  */
-export function getResendConfig() {
+export function getResendConfig(overrideRecipient?: string | null) {
   const apiKey = (process.env.RESEND_API_KEY || "").trim();
   const from = (process.env.RESEND_FROM || "onboarding@resend.dev").trim();
-  const recipient = (process.env.ALERT_RECIPIENT || "").trim();
+  const envRecipient = (process.env.ALERT_RECIPIENT || "").trim();
+  const recipient = (overrideRecipient || envRecipient).trim();
 
   const isKeyPlaceholder = !apiKey || apiKey === "re_replace_with_new_secret_key" || !apiKey.startsWith("re_");
   const isRecipientPlaceholder = !recipient || recipient === "replace_with_authorized_recipient_email" || !recipient.includes("@");
@@ -95,14 +97,30 @@ async function recordAuditMetadata(payload: {
  * Strictly preserves security: never returns the API key or raw private credentials.
  */
 export async function sendVoxGuardAlert(params: SendAlertParams): Promise<SendAlertResult> {
-  const { analysisId, eventType, result, score, threshold, inputQualityWarning, isTest } = params;
+  const { analysisId, eventType, result, score, threshold, inputQualityWarning, isTest, recipientEmail } = params;
   const now = new Date();
   const timestampIso = now.toISOString();
   const timestampDisplay = now.toUTCString();
 
   const apiKey = (process.env.RESEND_API_KEY || "").trim();
   const fromEmail = (process.env.RESEND_FROM || "onboarding@resend.dev").trim();
-  const recipient = (process.env.ALERT_RECIPIENT || "").trim();
+  let recipient = (recipientEmail || process.env.ALERT_RECIPIENT || "").trim();
+
+  // If environment recipient is placeholder or empty, attempt fallback to registry in database
+  if (!recipient || recipient === "replace_with_authorized_recipient_email" || !recipient.includes("@")) {
+    try {
+      const policyRes = await fetch(`${BACKEND_INTERNAL_URL}/api/notifications/settings`, { cache: "no-store" });
+      if (policyRes.ok) {
+        const policyData = await policyRes.json();
+        const firstRcp = policyData.recipients?.find((r: any) => r.email && r.email.includes("@"));
+        if (firstRcp) {
+          recipient = firstRcp.email.trim();
+        }
+      }
+    } catch {
+      // Fallback network failure handled below
+    }
+  }
 
   const jobId = `ntf_resend_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   const idempotencyKey = `${analysisId}:${eventType}:${recipient}`;

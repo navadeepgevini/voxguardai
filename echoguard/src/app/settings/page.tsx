@@ -285,7 +285,8 @@ export default function SettingsPage() {
     setDeliveryStatus("Sending");
     setTestResult(null);
     try {
-      const res = await sendTestNotificationEmail();
+      const targetRecipient = recipients.find(r => r.status === "VERIFIED")?.email || recipients[0]?.email;
+      const res = await sendTestNotificationEmail(targetRecipient);
       const statusMap: Record<string, "Sent" | "Failed" | "Suppressed"> = {
         SENT: "Sent",
         QUEUED: "Sent",

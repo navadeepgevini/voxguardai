@@ -27,7 +27,8 @@ export async function GET() {
       };
     }
 
-    const resendCfg = getResendConfig();
+    const firstRecipient = backendSettings.recipients?.find((r: any) => r.email && r.email.includes("@"))?.email || null;
+    const resendCfg = getResendConfig(firstRecipient);
 
     return NextResponse.json({
       ...backendSettings,

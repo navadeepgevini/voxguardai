@@ -5,7 +5,7 @@ import { sendVoxGuardAlert } from "@/lib/server/notifications";
 let lastTestTimestamp = 0;
 const TEST_RATE_LIMIT_MS = 10000;
 
-export async function POST() {
+export async function POST(req: Request) {
   const now = Date.now();
   if (now - lastTestTimestamp < TEST_RATE_LIMIT_MS) {
     const waitSeconds = Math.ceil((TEST_RATE_LIMIT_MS - (now - lastTestTimestamp)) / 1000);
@@ -16,6 +16,13 @@ export async function POST() {
       },
       { status: 429 }
     );
+  }
+
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch {
+    body = {};
   }
 
   lastTestTimestamp = now;
@@ -31,6 +38,7 @@ export async function POST() {
       threshold: 75.0,
       inputQualityWarning: null,
       isTest: true,
+      recipientEmail: body.recipient_email || null,
     });
 
     return NextResponse.json(result);
