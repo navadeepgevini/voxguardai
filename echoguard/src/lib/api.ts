@@ -319,6 +319,9 @@ export async function triggerAnalysisAlert(payload: {
   isIdentityMismatch?: boolean;
   isInconclusive?: boolean;
   inputQualityWarning?: string;
+  verdict?: string;
+  isSynthetic?: boolean;
+  authStatus?: string;
 }): Promise<{ status: string; messageId?: string; reason?: string; message?: string }> {
   const res = await fetch(`/api/notifications/trigger`, {
     method: "POST",

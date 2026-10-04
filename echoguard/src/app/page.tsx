@@ -37,6 +37,7 @@ import {
   Pause,
   Volume2,
   VolumeX,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -150,6 +151,12 @@ export default function HybridDashboard() {
   const [isPreviewMuted, setIsPreviewMuted] = useState(false);
   const [previewVolume, setPreviewVolume] = useState(1.0);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [automatedAlertNotice, setAutomatedAlertNotice] = useState<{
+    active: boolean;
+    messageId?: string;
+    text: string;
+  } | null>(null);
+  const liveAlertTriggeredRef = useRef(false);
 
   const formatAudioTime = (seconds: number) => {
     if (isNaN(seconds) || !isFinite(seconds) || seconds < 0) return "00:00";
@@ -285,6 +292,12 @@ export default function HybridDashboard() {
 
       // Trigger server-side Resend alert check post-persistence
       if (savedCall?.id) {
+        const isSyntheticDetected =
+          computedVerdict === "CRITICAL" ||
+          data.actionType === "TERMINATE" ||
+          (100 - data.authenticity) >= 60 ||
+          (data.authStatus && data.authStatus.toLowerCase().includes("synthetic"));
+
         triggerAnalysisAlert({
           analysisId: savedCall.id,
           syntheticScore: 100 - data.authenticity,
@@ -292,6 +305,17 @@ export default function HybridDashboard() {
           contextRisk: data.contextRisk,
           isIdentityMismatch: data.identity > 0 && data.identity < 45,
           isInconclusive: false,
+          verdict: computedVerdict,
+          isSynthetic: isSyntheticDetected,
+          authStatus: data.authStatus,
+        }).then((alertRes) => {
+          if (alertRes && (alertRes.status === "SENT" || alertRes.status === "QUEUED")) {
+            setAutomatedAlertNotice({
+              active: true,
+              messageId: alertRes.messageId,
+              text: `Deepfake audio alert dispatched automatically to authorized responder for recorded snippet.`,
+            });
+          }
         }).catch((err) => console.warn("[VoxGuard Alert] Trigger warning:", err));
       }
     } catch (err) {
@@ -398,6 +422,7 @@ export default function HybridDashboard() {
       }).catch(() => navigator.mediaDevices.getUserMedia({ audio: true }));
       micStreamRef.current = stream;
       pcmBufferRef.current = [];
+      liveAlertTriggeredRef.current = false;
       liveSpeechTextRef.current = "";
       setLiveSpeechText("");
 
@@ -527,12 +552,19 @@ export default function HybridDashboard() {
       setRiskState(computedVerdict);
       setIsSimulating(true);
 
-      if (persist) {
-        // Persist real call to SQLite database
+      const isSyntheticDetected =
+        computedVerdict === "CRITICAL" ||
+        data.actionType === "TERMINATE" ||
+        (100 - data.authenticity) >= 60 ||
+        (data.authStatus && data.authStatus.toLowerCase().includes("synthetic"));
+
+      // 1. Immediate automated alert dispatch during active streaming if synthetic deepfake detected
+      if (!liveAlertTriggeredRef.current && isSyntheticDetected) {
+        liveAlertTriggeredRef.current = true;
         const savedCall = await saveCall({
-          caller: data.callerName,
+          caller: data.callerName || "Live Recorded Voice",
           agent: "Operator (SOC)",
-          duration: formatTime(callDuration) || "0m 30s",
+          duration: formatTime(callDuration) || "0m 15s",
           verdict: computedVerdict,
           authenticity: data.authenticity,
           identity: data.identity,
@@ -549,6 +581,53 @@ export default function HybridDashboard() {
             contextRisk: data.contextRisk,
             isIdentityMismatch: data.identity > 0 && data.identity < 45,
             isInconclusive: false,
+            verdict: computedVerdict,
+            isSynthetic: true,
+            authStatus: data.authStatus,
+          }).then((alertRes) => {
+            if (alertRes && (alertRes.status === "SENT" || alertRes.status === "QUEUED")) {
+              setAutomatedAlertNotice({
+                active: true,
+                messageId: alertRes.messageId,
+                text: `Deepfake audio alert dispatched automatically to authorized responder for live voice stream.`,
+              });
+            }
+          }).catch((err) => console.warn("[VoxGuard Alert] Trigger warning:", err));
+        }
+      } else if (persist) {
+        // 2. Persist real call to SQLite database on session conclusion
+        const savedCall = await saveCall({
+          caller: data.callerName,
+          agent: "Operator (SOC)",
+          duration: formatTime(callDuration) || "0m 30s",
+          verdict: computedVerdict,
+          authenticity: data.authenticity,
+          identity: data.identity,
+          context: data.contextTitle,
+          flaggedPhrases: data.threatKeywords,
+        });
+        setIsPersisted(true);
+
+        if (savedCall?.id && isSyntheticDetected && !liveAlertTriggeredRef.current) {
+          liveAlertTriggeredRef.current = true;
+          triggerAnalysisAlert({
+            analysisId: savedCall.id,
+            syntheticScore: 100 - data.authenticity,
+            authenticity: data.authenticity,
+            contextRisk: data.contextRisk,
+            isIdentityMismatch: data.identity > 0 && data.identity < 45,
+            isInconclusive: false,
+            verdict: computedVerdict,
+            isSynthetic: true,
+            authStatus: data.authStatus,
+          }).then((alertRes) => {
+            if (alertRes && (alertRes.status === "SENT" || alertRes.status === "QUEUED")) {
+              setAutomatedAlertNotice({
+                active: true,
+                messageId: alertRes.messageId,
+                text: `Deepfake audio alert dispatched automatically to authorized responder for voice stream session.`,
+              });
+            }
           }).catch((err) => console.warn("[VoxGuard Alert] Trigger warning:", err));
         }
       }
@@ -636,6 +715,12 @@ export default function HybridDashboard() {
 
       // Trigger server-side Resend alert check post-persistence
       if (savedCall?.id) {
+        const isSyntheticDetected =
+          computedVerdict === "CRITICAL" ||
+          data.actionType === "TERMINATE" ||
+          (100 - data.authenticity) >= 60 ||
+          (data.authStatus && data.authStatus.toLowerCase().includes("synthetic"));
+
         triggerAnalysisAlert({
           analysisId: savedCall.id,
           syntheticScore: 100 - data.authenticity,
@@ -643,6 +728,17 @@ export default function HybridDashboard() {
           contextRisk: data.contextRisk,
           isIdentityMismatch: data.identity > 0 && data.identity < 45,
           isInconclusive: false,
+          verdict: computedVerdict,
+          isSynthetic: isSyntheticDetected,
+          authStatus: data.authStatus,
+        }).then((alertRes) => {
+          if (alertRes && (alertRes.status === "SENT" || alertRes.status === "QUEUED")) {
+            setAutomatedAlertNotice({
+              active: true,
+              messageId: alertRes.messageId,
+              text: `Deepfake audio alert dispatched automatically to authorized responder for uploaded recording (${previewFile.name}).`,
+            });
+          }
         }).catch((err) => console.warn("[VoxGuard Alert] Trigger warning:", err));
       }
     } catch (err) {
@@ -714,6 +810,8 @@ export default function HybridDashboard() {
     setActionExecuted(false);
     setIsPersisted(false);
     setLiveSpeechText("");
+    liveAlertTriggeredRef.current = false;
+    setAutomatedAlertNotice(null);
     handleClearPreview();
   };
 
@@ -1226,6 +1324,42 @@ export default function HybridDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT 7 COLS: Live Voiceprint Analysis & Threat Feeds */}
           <div className="lg:col-span-7 space-y-6">
+            {/* Automated Alert Email Notification Banner */}
+            {automatedAlertNotice && (
+              <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between text-xs shadow-xs animate-in fade-in">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-red-100 border border-red-300 flex items-center justify-center text-red-700 shrink-0">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-red-900 uppercase tracking-wider text-[11px]">
+                        Automated Security Alert Dispatched
+                      </span>
+                      <Badge className="bg-red-100 text-red-800 border-red-300 text-[10px]">
+                        Resend Provider Delivered
+                      </Badge>
+                    </div>
+                    <p className="text-red-800 text-xs mt-0.5 truncate">{automatedAlertNotice.text}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  {automatedAlertNotice.messageId && (
+                    <span className="hidden sm:inline-block text-[10px] font-mono text-red-700 bg-red-100/70 px-2 py-0.5 rounded border border-red-200">
+                      ID: {automatedAlertNotice.messageId.slice(0, 16)}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setAutomatedAlertNotice(null)}
+                    className="text-red-400 hover:text-red-700 text-xs p-1 cursor-pointer"
+                    title="Dismiss alert notification"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* AMVTF Final Decision & Action Widget */}
             <div
               className={cn(

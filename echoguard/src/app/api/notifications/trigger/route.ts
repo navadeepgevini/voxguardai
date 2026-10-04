@@ -68,14 +68,19 @@ export async function POST(req: Request) {
       : (typeof authenticity === "number" ? Math.max(0, 100 - authenticity) : 0);
 
     const computedContext = typeof contextRisk === "number" ? contextRisk : 0;
+    const isSyntheticFlagged = Boolean(
+      body.isSynthetic ||
+      (body.verdict === "CRITICAL" && computedSynthetic >= 50) ||
+      (body.authStatus && String(body.authStatus).toLowerCase().includes("synthetic"))
+    );
 
     let eventType: "SYNTHETIC_DETECTED" | "HIGH_CONTEXT_RISK" | "ANALYSIS_UNAVAILABLE" | "IDENTITY_MISMATCH" | null = null;
     let resultLabel: "Likely synthetic" | "High context risk" | "Analysis unavailable" | "Voiceprint identity mismatch" | null = null;
     let metricScore: number | null = null;
     let metricThreshold: number | null = null;
 
-    // Rule 1: Likely synthetic/deepfake result with synthetic score >= 75%
-    if (computedSynthetic >= syntheticThresh && policy.notify_on_synthetic) {
+    // Rule 1: Likely synthetic/deepfake result with synthetic score >= threshold OR model-flagged synthetic
+    if ((computedSynthetic >= syntheticThresh || isSyntheticFlagged) && policy.notify_on_synthetic) {
       eventType = "SYNTHETIC_DETECTED";
       resultLabel = "Likely synthetic";
       metricScore = computedSynthetic;
@@ -111,7 +116,7 @@ export async function POST(req: Request) {
       const histRes = await fetch(`${BACKEND_INTERNAL_URL}/api/notifications/history?limit=30`, { cache: "no-store" });
       if (histRes.ok) {
         const hist: any[] = await histRes.json();
-        // Check if this analysis ID was already sent
+        // Check if this exact analysis ID was already sent
         const alreadyDispatched = hist.some(
           (j) => j.analysis_id === analysisId && (j.status === "SENT" || j.status === "QUEUED")
         );
@@ -123,19 +128,23 @@ export async function POST(req: Request) {
           });
         }
 
-        // Check cooldown window
+        // Check cooldown window for identical event types (TEST_ALERT never blocks real security alerts)
         const cooldownMs = (policy.cooldown_minutes || 5) * 60 * 1000;
         const now = Date.now();
         const inCooldown = hist.some((j) => {
           if (j.status !== "SENT") return false;
-          const jobTime = new Date(j.created_at).getTime();
-          return now - jobTime < cooldownMs;
+          if (j.event_type === "TEST_ALERT") return false; // Test alerts do not throttle actual incident alerts
+          if (j.event_type !== eventType) return false; // Cooldown applies strictly per-event-type
+          const rawCreated = j.created_at || "";
+          const parsedTime = Date.parse(rawCreated.includes("T") ? rawCreated : `${rawCreated.replace(" ", "T")}Z`);
+          if (isNaN(parsedTime)) return false;
+          return now - parsedTime < cooldownMs;
         });
 
         if (inCooldown) {
           return NextResponse.json({
             status: "SUPPRESSED",
-            reason: `Alert suppressed: cooldown window active (${policy.cooldown_minutes}m).`,
+            reason: `Alert suppressed: cooldown window active (${policy.cooldown_minutes}m) for ${eventType}.`,
           });
         }
       }
