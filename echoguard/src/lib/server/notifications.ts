@@ -170,7 +170,9 @@ export async function sendVoxGuardAlert(params: SendAlertParams): Promise<SendAl
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const detailUrl = `${baseUrl}/call-history`;
+  const detailUrl = analysisId && analysisId.startsWith("VX-")
+    ? `${baseUrl}/call-history?search=${encodeURIComponent(analysisId)}`
+    : `${baseUrl}/call-history`;
 
   // Standard Subject required by specification
   const subject = "[VoxGuard] Review required: audio security alert";
@@ -204,8 +206,8 @@ Alerts are delivered by email and may appear on the recipient’s phone through 
     <!-- Header -->
     <tr>
       <td style="background-color: #0f172a; padding: 20px 24px; border-bottom: 3px solid #f6821f;">
-        <h1 style="color: #ffffff; font-size: 18px; margin: 0; font-weight: 700; letter-spacing: -0.02em;">VoxGuard SOC</h1>
-        <p style="color: #94a3b8; font-size: 12px; margin: 4px 0 0 0;">Automated Audio Trust & Deepfake Defense Alert</p>
+        <h1 style="color: #ffffff; font-size: 18px; margin: 0; font-weight: 700; letter-spacing: -0.02em;">VoxGuard - EchoGuard AI</h1>
+        <p style="color: #94a3b8; font-size: 12px; margin: 4px 0 0 0;">Real-Time Voice Trust & Deepfake Defense Alert</p>
       </td>
     </tr>
 
