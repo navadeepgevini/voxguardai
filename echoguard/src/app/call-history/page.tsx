@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import {
   Search,
   Bell,
@@ -19,6 +19,7 @@ import {
   Trash2,
   PhoneCall,
   Activity,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -283,106 +284,243 @@ export default function CallHistoryPage() {
                   </tr>
                 ) : (
                   calls.map((call) => {
+                    const isSelected = selectedCall?.id === call.id;
                     const v = verdictConfig[call.verdict] || verdictConfig.SAFE;
                     const Icon = v.icon;
+
+                    let meta: any = null;
+                    if (call.spectrogramMetadata) {
+                      try {
+                        meta = typeof call.spectrogramMetadata === "string"
+                          ? JSON.parse(call.spectrogramMetadata)
+                          : call.spectrogramMetadata;
+                      } catch {
+                        meta = null;
+                      }
+                    }
+
                     return (
-                      <tr
-                        key={call.id}
-                        className={cn(
-                          "border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer",
-                          selectedCall?.id === call.id ? "bg-orange-50/50" : ""
+                      <Fragment key={call.id}>
+                        <tr
+                          className={cn(
+                            "border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer",
+                            isSelected ? "bg-orange-50/60 font-medium" : ""
+                          )}
+                          onClick={() => setSelectedCall(isSelected ? null : call)}
+                        >
+                          <td className="py-3 px-4 font-mono text-xs text-gray-500">{call.id}</td>
+                          <td className="py-3 px-4 font-medium text-gray-900">{call.caller}</td>
+                          <td className="py-3 px-4 text-gray-600">{call.agent}</td>
+                          <td className="py-3 px-4 text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-3 h-3 text-gray-400" />
+                              <span>{call.date}</span>
+                              <Clock className="w-3 h-3 text-gray-400 ml-1" />
+                              <span>{call.time}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-gray-600">{call.duration}</td>
+                          <td className="py-3 px-4">
+                            <span className={cn("font-bold", call.authenticity > 50 ? "text-emerald-700" : "text-red-700")}>
+                              {call.authenticity}%
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={cn("font-bold", call.identity > 70 ? "text-emerald-700" : "text-amber-700")}>
+                              {call.identity}%
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge className={cn("gap-1 font-medium text-xs", v.bg, v.color, v.border)}>
+                              <Icon className="w-3 h-3" />
+                              {v.label}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCall(isSelected ? null : call);
+                                }}
+                                className={cn(
+                                  "text-xs gap-1.5 h-8 px-2.5 font-medium transition-all shadow-sm cursor-pointer",
+                                  isSelected
+                                    ? "bg-[#F6821F] text-white border-[#F6821F]"
+                                    : "bg-orange-50 text-[#F6821F] border-orange-200 hover:bg-[#F6821F] hover:text-white"
+                                )}
+                                title={isSelected ? "Close Spectrogram Evidence" : "Inspect Spectrogram & Forensic Evidence"}
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>{isSelected ? "Close" : "Evidence"}</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => handleDeleteCall(call.id, e)}
+                                className="text-gray-400 hover:text-red-600 p-1.5 h-8 w-8"
+                                title="Delete Record"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* ─── INLINE ACCORDION EXPANSION: SPECTROGRAM & FORENSIC EVIDENCE ─── */}
+                        {isSelected && (
+                          <tr className="bg-orange-50/20 border-b border-orange-200 animate-in fade-in duration-150">
+                            <td colSpan={9} className="p-5">
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-bold text-gray-900 text-sm">
+                                      Call Detail: <span className="font-mono text-[#F6821F]">{call.id}</span>
+                                    </h3>
+                                    <span className="text-gray-400">—</span>
+                                    <span className="text-gray-700 text-xs font-semibold">{call.caller}</span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setSelectedCall(null)}
+                                    className="text-xs text-gray-500 hover:text-red-600 cursor-pointer"
+                                  >
+                                    Close Detail
+                                  </Button>
+                                </div>
+
+                                <div className="grid md:grid-cols-3 gap-4 text-xs">
+                                  <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-1 shadow-xs">
+                                    <p className="text-gray-500 font-semibold uppercase tracking-wider text-[10px]">Acoustic Authenticity</p>
+                                    <p className={cn("text-lg font-bold", call.authenticity > 50 ? "text-emerald-700" : "text-red-700")}>
+                                      {call.authenticity}%
+                                    </p>
+                                    <p className="text-gray-500">Threshold: &gt;50% Human</p>
+                                  </div>
+                                  <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-1 shadow-xs">
+                                    <p className="text-gray-500 font-semibold uppercase tracking-wider text-[10px]">Speaker Identity Match</p>
+                                    <p className={cn("text-lg font-bold", call.identity > 70 ? "text-emerald-700" : "text-amber-700")}>
+                                      {call.identity}%
+                                    </p>
+                                    <p className="text-gray-500">ECAPA Cosine Score</p>
+                                  </div>
+                                  <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-1 shadow-xs">
+                                    <p className="text-gray-500 font-semibold uppercase tracking-wider text-[10px]">Conversation Context</p>
+                                    <p className="text-sm font-bold text-gray-900 truncate" title={call.context}>{call.context}</p>
+                                    <p className="text-gray-500 truncate">
+                                      Flagged: {call.flaggedPhrases.length ? call.flaggedPhrases.join(", ") : "None"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Evidentiary Analysis Spectrogram Section */}
+                                {call.spectrogramData ? (
+                                  <div className="p-4 bg-white border border-gray-200 rounded-lg space-y-3 shadow-sm">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-2">
+                                      <div>
+                                        <div className="flex items-center gap-2">
+                                          <h4 className="text-xs font-bold text-gray-900 tracking-tight">
+                                            Analysis Spectrogram
+                                          </h4>
+                                          <Badge
+                                            variant="outline"
+                                            className="bg-emerald-50 text-emerald-800 border-emerald-300 text-[10px] font-semibold"
+                                          >
+                                            Retained Evidence
+                                          </Badge>
+                                        </div>
+                                        <p className="text-[11px] text-gray-500 mt-0.5">
+                                          Generated from the audio used by the detection pipeline.
+                                        </p>
+                                      </div>
+                                      <span className="text-[11px] font-mono text-gray-400">
+                                        {call.id}
+                                      </span>
+                                    </div>
+
+                                    {/* Accessible Summary Notice */}
+                                    <div
+                                      role="status"
+                                      aria-live="polite"
+                                      className="text-xs bg-slate-50 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-mono flex flex-wrap items-center justify-between gap-2"
+                                    >
+                                      <span className="font-sans font-medium text-slate-900">
+                                        {meta?.summary || (
+                                          <>
+                                            Spectrogram for <span className="font-semibold">{meta?.filename || call.caller}</span>, duration{" "}
+                                            <span className="font-semibold">{meta?.duration_seconds ? `${meta.duration_seconds}s` : call.duration}</span>, sample rate{" "}
+                                            <span className="font-semibold">{meta?.sample_rate?.toLocaleString() || "16,000"} Hz</span>.
+                                          </>
+                                        )}
+                                      </span>
+                                      <Badge variant="outline" className="text-[10px] bg-slate-100 font-mono text-slate-600 border-slate-300">
+                                        {meta?.preprocessing_version || "AMVTF-v2.1-Preprocessed-16kHz"}
+                                      </Badge>
+                                    </div>
+
+                                    {/* Render Image */}
+                                    <div className="relative rounded-lg overflow-hidden border border-slate-800 bg-[#0B1120] shadow-inner max-w-4xl mx-auto">
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={call.spectrogramData}
+                                        alt={meta?.summary || `Analysis Spectrogram for ${call.caller}`}
+                                        className="w-full h-auto block select-none"
+                                      />
+                                    </div>
+
+                                    {/* Metadata Badges */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-0.5 max-w-4xl mx-auto">
+                                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                                        <span className="text-gray-400 text-[10px] uppercase font-semibold block">Analysis ID</span>
+                                        <span className="font-bold font-mono text-gray-800 text-xs truncate block">
+                                          {call.id}
+                                        </span>
+                                      </div>
+                                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                                        <span className="text-gray-400 text-[10px] uppercase font-semibold block">Sample Rate</span>
+                                        <span className="font-bold font-mono text-gray-800 text-xs">
+                                          {meta?.sample_rate?.toLocaleString() || "16,000"} Hz (Mono)
+                                        </span>
+                                      </div>
+                                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                                        <span className="text-gray-400 text-[10px] uppercase font-semibold block">FFT & Hop</span>
+                                        <span className="font-bold font-mono text-gray-800 text-xs">
+                                          {meta?.n_fft || 512} FFT / {meta?.hop_length || 256} Hop
+                                        </span>
+                                      </div>
+                                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                                        <span className="text-gray-400 text-[10px] uppercase font-semibold block">Frequency Scale</span>
+                                        <span className="font-bold font-mono text-gray-800 text-xs">
+                                          {meta?.frequency_scale || "Linear 0 - 8,000 Hz"}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="p-3.5 bg-white border border-gray-200 rounded-lg flex items-start gap-3">
+                                    <Info className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                                    <div className="text-xs space-y-0.5">
+                                      <p className="font-semibold text-gray-700">Evidentiary Spectrogram</p>
+                                      <p className="text-gray-500">
+                                        Visual evidence unavailable for this historical record (audio retention policy expired or pre-dates evidentiary logging).
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                        onClick={() => setSelectedCall(selectedCall?.id === call.id ? null : call)}
-                      >
-                        <td className="py-3 px-4 font-mono text-xs text-gray-500">{call.id}</td>
-                        <td className="py-3 px-4 font-medium text-gray-900">{call.caller}</td>
-                        <td className="py-3 px-4 text-gray-600">{call.agent}</td>
-                        <td className="py-3 px-4 text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-3 h-3 text-gray-400" />
-                            <span>{call.date}</span>
-                            <Clock className="w-3 h-3 text-gray-400 ml-1" />
-                            <span>{call.time}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">{call.duration}</td>
-                        <td className="py-3 px-4">
-                          <span className={cn("font-bold", call.authenticity > 50 ? "text-emerald-700" : "text-red-700")}>
-                            {call.authenticity}%
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={cn("font-bold", call.identity > 70 ? "text-emerald-700" : "text-amber-700")}>
-                            {call.identity}%
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge className={cn("gap-1 font-medium text-xs", v.bg, v.color, v.border)}>
-                            <Icon className="w-3 h-3" />
-                            {v.label}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-gray-500 hover:text-[#F6821F] p-1.5"
-                              title="Inspect Details"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => handleDeleteCall(call.id, e)}
-                              className="text-gray-400 hover:text-red-600 p-1.5"
-                              title="Delete Record"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
+                      </Fragment>
                     );
                   })
                 )}
               </tbody>
             </table>
           </div>
-
-          {/* Expanded Detail */}
-          {selectedCall && (
-            <div className="p-6 bg-gray-50 border-t border-gray-200 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900 text-sm">
-                  Call Detail: {selectedCall.id} — {selectedCall.caller}
-                </h3>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedCall(null)} className="text-xs text-gray-500">
-                  Close Detail
-                </Button>
-              </div>
-              <div className="grid md:grid-cols-3 gap-4 text-xs">
-                <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-1">
-                  <p className="text-gray-500 font-semibold uppercase tracking-wider">Acoustic Authenticity</p>
-                  <p className="text-lg font-bold text-gray-900">{selectedCall.authenticity}%</p>
-                  <p className="text-gray-500">Threshold: &gt;50% Human</p>
-                </div>
-                <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-1">
-                  <p className="text-gray-500 font-semibold uppercase tracking-wider">Speaker Identity Match</p>
-                  <p className="text-lg font-bold text-gray-900">{selectedCall.identity}%</p>
-                  <p className="text-gray-500">ECAPA Cosine Score</p>
-                </div>
-                <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-1">
-                  <p className="text-gray-500 font-semibold uppercase tracking-wider">Conversation Context</p>
-                  <p className="text-sm font-bold text-gray-900">{selectedCall.context}</p>
-                  <p className="text-gray-500">
-                    Flagged Phrases: {selectedCall.flaggedPhrases.length ? selectedCall.flaggedPhrases.join(", ") : "None"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </main>
     </>

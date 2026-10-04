@@ -468,6 +468,15 @@ def init_db(reset: bool = False):
     )
     """)
 
+    for col, col_type in [
+        ("spectrogram_data", "TEXT"),
+        ("spectrogram_metadata", "TEXT")
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE calls ADD COLUMN {col} {col_type}")
+        except Exception:
+            pass
+
     # Real Voice profiles table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS voice_profiles (

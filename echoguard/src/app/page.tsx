@@ -49,6 +49,7 @@ import {
   VoiceProfile,
   AudioAnalysisResponse,
 } from "@/lib/api";
+import { AudioPreviewSpectrogram } from "@/components/AudioPreviewSpectrogram";
 
 type RiskState = "IDLE" | "SAFE" | "WARNING" | "CRITICAL";
 
@@ -287,16 +288,19 @@ export default function HybridDashboard() {
         identity: data.identity,
         context: data.contextTitle,
         flaggedPhrases: data.threatKeywords,
+        spectrogramData: data.spectrogram?.data_url || null,
+        spectrogramMetadata: data.spectrogram ? JSON.stringify(data.spectrogram) : null,
       });
       setIsPersisted(true);
 
       // Trigger server-side Resend alert check post-persistence
       if (savedCall?.id) {
-        const isSyntheticDetected =
+        const isSyntheticDetected = Boolean(
           computedVerdict === "CRITICAL" ||
           data.actionType === "TERMINATE" ||
           (100 - data.authenticity) >= 60 ||
-          (data.authStatus && data.authStatus.toLowerCase().includes("synthetic"));
+          (data.authStatus && data.authStatus.toLowerCase().includes("synthetic"))
+        );
 
         triggerAnalysisAlert({
           analysisId: savedCall.id,
@@ -552,11 +556,12 @@ export default function HybridDashboard() {
       setRiskState(computedVerdict);
       setIsSimulating(true);
 
-      const isSyntheticDetected =
+      const isSyntheticDetected = Boolean(
         computedVerdict === "CRITICAL" ||
         data.actionType === "TERMINATE" ||
         (100 - data.authenticity) >= 60 ||
-        (data.authStatus && data.authStatus.toLowerCase().includes("synthetic"));
+        (data.authStatus && data.authStatus.toLowerCase().includes("synthetic"))
+      );
 
       // 1. Immediate automated alert dispatch during active streaming if synthetic deepfake detected
       if (!liveAlertTriggeredRef.current && isSyntheticDetected) {
@@ -570,6 +575,8 @@ export default function HybridDashboard() {
           identity: data.identity,
           context: data.contextTitle,
           flaggedPhrases: data.threatKeywords,
+          spectrogramData: data.spectrogram?.data_url || null,
+          spectrogramMetadata: data.spectrogram ? JSON.stringify(data.spectrogram) : null,
         });
         setIsPersisted(true);
 
@@ -605,6 +612,8 @@ export default function HybridDashboard() {
           identity: data.identity,
           context: data.contextTitle,
           flaggedPhrases: data.threatKeywords,
+          spectrogramData: data.spectrogram?.data_url || null,
+          spectrogramMetadata: data.spectrogram ? JSON.stringify(data.spectrogram) : null,
         });
         setIsPersisted(true);
 
@@ -710,16 +719,19 @@ export default function HybridDashboard() {
         identity: data.identity,
         context: data.contextTitle,
         flaggedPhrases: data.threatKeywords,
+        spectrogramData: data.spectrogram?.data_url || null,
+        spectrogramMetadata: data.spectrogram ? JSON.stringify(data.spectrogram) : null,
       });
       setIsPersisted(true);
 
       // Trigger server-side Resend alert check post-persistence
       if (savedCall?.id) {
-        const isSyntheticDetected =
+        const isSyntheticDetected = Boolean(
           computedVerdict === "CRITICAL" ||
           data.actionType === "TERMINATE" ||
           (100 - data.authenticity) >= 60 ||
-          (data.authStatus && data.authStatus.toLowerCase().includes("synthetic"));
+          (data.authStatus && data.authStatus.toLowerCase().includes("synthetic"))
+        );
 
         triggerAnalysisAlert({
           analysisId: savedCall.id,
@@ -776,6 +788,8 @@ export default function HybridDashboard() {
         identity: data.identity,
         context: data.contextTitle,
         flaggedPhrases: data.threatKeywords,
+        spectrogramData: data.spectrogram?.data_url || null,
+        spectrogramMetadata: data.spectrogram ? JSON.stringify(data.spectrogram) : null,
       });
       setIsPersisted(true);
 
@@ -1004,7 +1018,7 @@ export default function HybridDashboard() {
       )}
 
       {/* ─── AUDIO PREVIEW CARD ─── */}
-      <div className="max-w-[1400px] mx-auto mt-4 px-6 sm:px-10">
+      <div className="max-w-[1400px] mx-auto mt-4 px-6 sm:px-10 space-y-3">
         <div className="p-4 bg-white shadow-sm border border-gray-200 rounded-xl flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1231,6 +1245,11 @@ export default function HybridDashboard() {
             </div>
           )}
         </div>
+
+        {/* ─── AUDIO PREVIEW SPECTROGRAM ─── */}
+        {previewFile && (
+          <AudioPreviewSpectrogram audioFile={previewFile} />
+        )}
       </div>
 
       {/* ─── MAIN SOC MONITORING WORKSPACE ─── */}
@@ -1502,44 +1521,140 @@ export default function HybridDashboard() {
 
             {/* Audio Waveform & Biometric Visualization */}
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Audio Ingestion & Frequency Spectrogram</h3>
-                  <p className="text-xs text-gray-500">Live 16kHz PCM audio frequency bin magnitude</p>
+                  <h3 className="text-sm font-bold text-gray-900 tracking-tight">
+                    {currentScenario?.spectrogram?.available
+                      ? "Analysis Spectrogram"
+                      : "Audio Ingestion & Frequency Spectrogram"}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {currentScenario?.spectrogram?.available
+                      ? "Generated from the audio used by the detection pipeline."
+                      : "Live 16kHz PCM audio frequency bin magnitude"}
+                  </p>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <span
                     className={cn(
                       "w-2 h-2 rounded-full",
-                      isSimulating || isMicActive ? "bg-emerald-500 animate-pulse" : "bg-gray-400"
+                      isAnalyzing
+                        ? "bg-orange-500 animate-pulse"
+                        : currentScenario?.spectrogram?.available
+                        ? "bg-emerald-500"
+                        : isSimulating || isMicActive
+                        ? "bg-emerald-500 animate-pulse"
+                        : "bg-gray-400"
                     )}
                   />
-                  <span className="text-xs font-mono text-gray-500">
-                    {isSimulating || isMicActive ? "LIVE SIGNAL" : "OFFLINE"}
+                  <span className="text-xs font-mono text-gray-600">
+                    {isAnalyzing
+                      ? "EVALUATING..."
+                      : currentScenario?.spectrogram?.available
+                      ? "EVIDENCE LOCKED"
+                      : isSimulating || isMicActive
+                      ? "LIVE SIGNAL"
+                      : "OFFLINE"}
                   </span>
                 </div>
               </div>
 
-              {/* Dynamic Audio Bars */}
-              <div className="h-28 bg-gray-900 rounded-lg p-4 flex items-end justify-between gap-1.5 overflow-hidden">
-                {micVolume.map((vol, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                    <div
-                      className={cn(
-                        "w-full rounded-t transition-all duration-75",
-                        riskState === "CRITICAL"
-                          ? "bg-gradient-to-t from-red-600 to-red-400"
-                          : riskState === "WARNING"
-                          ? "bg-gradient-to-t from-amber-600 to-amber-400"
-                          : riskState === "SAFE"
-                          ? "bg-gradient-to-t from-emerald-600 to-emerald-400"
-                          : "bg-gray-700"
+              {/* Body: Backend Evidence Spectrogram OR Analyzing State OR Live Frequency Bars */}
+              {isAnalyzing ? (
+                <div className="h-44 bg-[#0B1120] rounded-lg border border-gray-800 flex flex-col items-center justify-center text-center p-6 text-slate-300">
+                  <RefreshCw className="w-7 h-7 text-[#F6821F] animate-spin mb-2" />
+                  <p className="text-xs font-semibold text-slate-100">
+                    Computing Forensic Analysis Spectrogram...
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-1 max-w-md">
+                    Extracting 512-point Hann STFT slices from normalized 16kHz audio fed into detection pipeline.
+                  </p>
+                </div>
+              ) : currentScenario?.spectrogram?.available && currentScenario.spectrogram.data_url ? (
+                <div className="space-y-3">
+                  {/* Accessible Summary Notice */}
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="text-xs bg-slate-50 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-mono flex flex-wrap items-center justify-between gap-2"
+                  >
+                    <span className="font-sans font-medium text-slate-900">
+                      {currentScenario.spectrogram.summary || (
+                        <>
+                          Spectrogram for <span className="font-semibold">{currentScenario.spectrogram.filename}</span>, duration{" "}
+                          <span className="font-semibold">{currentScenario.spectrogram.duration_seconds}s</span>, sample rate{" "}
+                          <span className="font-semibold">{currentScenario.spectrogram.sample_rate?.toLocaleString()} Hz</span>.
+                        </>
                       )}
-                      style={{ height: `${isSimulating || isMicActive ? vol : 8}%` }}
+                    </span>
+                    <Badge variant="outline" className="text-[10px] bg-slate-100 font-mono text-slate-600 border-slate-300">
+                      {currentScenario.spectrogram.preprocessing_version || "AMVTF-v2.1-Preprocessed-16kHz"}
+                    </Badge>
+                  </div>
+
+                  {/* Backend Generated Spectrogram Image */}
+                  <div className="relative rounded-lg overflow-hidden border border-slate-800 bg-[#0B1120] shadow-inner">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={currentScenario.spectrogram.data_url}
+                      alt={
+                        currentScenario.spectrogram.summary ||
+                        `Analysis Spectrogram for ${currentScenario.spectrogram.filename || "audio"}`
+                      }
+                      className="w-full h-auto block select-none"
                     />
                   </div>
-                ))}
-              </div>
+
+                  {/* Metadata Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-0.5">
+                    <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                      <span className="text-gray-400 text-[10px] uppercase font-semibold block">Analysis ID</span>
+                      <span className="font-bold font-mono text-gray-800 text-xs truncate block">
+                        {currentScenario.spectrogram.analysis_id || (isPersisted ? "SAVED" : "EVAL-ACTIVE")}
+                      </span>
+                    </div>
+                    <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                      <span className="text-gray-400 text-[10px] uppercase font-semibold block">Sample Rate</span>
+                      <span className="font-bold font-mono text-gray-800 text-xs">
+                        {currentScenario.spectrogram.sample_rate?.toLocaleString() || "16,000"} Hz (Mono)
+                      </span>
+                    </div>
+                    <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                      <span className="text-gray-400 text-[10px] uppercase font-semibold block">FFT & Hop</span>
+                      <span className="font-bold font-mono text-gray-800 text-xs">
+                        {currentScenario.spectrogram.n_fft || 512} FFT / {currentScenario.spectrogram.hop_length || 256} Hop
+                      </span>
+                    </div>
+                    <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                      <span className="text-gray-400 text-[10px] uppercase font-semibold block">Frequency Scale</span>
+                      <span className="font-bold font-mono text-gray-800 text-xs">
+                        {currentScenario.spectrogram.frequency_scale || "Linear 0 - 8,000 Hz"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Dynamic Audio Bars */
+                <div className="h-28 bg-gray-900 rounded-lg p-4 flex items-end justify-between gap-1.5 overflow-hidden">
+                  {micVolume.map((vol, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                      <div
+                        className={cn(
+                          "w-full rounded-t transition-all duration-75",
+                          riskState === "CRITICAL"
+                            ? "bg-gradient-to-t from-red-600 to-red-400"
+                            : riskState === "WARNING"
+                            ? "bg-gradient-to-t from-amber-600 to-amber-400"
+                            : riskState === "SAFE"
+                            ? "bg-gradient-to-t from-emerald-600 to-emerald-400"
+                            : "bg-gray-700"
+                        )}
+                        style={{ height: `${isSimulating || isMicActive ? vol : 8}%` }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Spectral Metadata */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">

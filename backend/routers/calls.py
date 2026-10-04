@@ -35,6 +35,7 @@ def get_calls(
 
     results = []
     for r in rows:
+        row_dict = dict(r) if hasattr(r, "keys") else {}
         results.append(CallRecordResponse(
             id=r["id"],
             caller=r["caller"],
@@ -46,9 +47,55 @@ def get_calls(
             authenticity=float(r["authenticity"]),
             identity=float(r["identity"]),
             context=r["context"],
-            flaggedPhrases=json.loads(r["flagged_phrases"]) if r["flagged_phrases"] else []
+            flaggedPhrases=json.loads(r["flagged_phrases"]) if r["flagged_phrases"] else [],
+            spectrogramData=row_dict.get("spectrogram_data"),
+            spectrogramMetadata=row_dict.get("spectrogram_metadata")
         ))
     return results
+
+@router.get("/{call_id}/evidence")
+def get_call_evidence(call_id: str):
+    """
+    Returns verified visual evidence (spectrogram image and STFT metadata) for an analysis record.
+    If unavailable due to retention policy, returns structured unavailable status.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM calls WHERE id = ?", (call_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Call record not found.")
+
+    row_dict = dict(row) if hasattr(row, "keys") else {}
+    spec_data = row_dict.get("spectrogram_data")
+    spec_meta_raw = row_dict.get("spectrogram_metadata")
+
+    if not spec_data or not spec_meta_raw:
+        return {
+            "available": False,
+            "analysis_id": call_id,
+            "caller": row_dict.get("caller"),
+            "verdict": row_dict.get("verdict"),
+            "authenticity": row_dict.get("authenticity"),
+            "reason": "Visual evidence unavailable for this historical record (audio retention policy expired or pre-dates evidentiary logging)."
+        }
+
+    try:
+        meta = json.loads(spec_meta_raw)
+    except Exception:
+        meta = {}
+
+    return {
+        "available": True,
+        "analysis_id": call_id,
+        "caller": row_dict.get("caller"),
+        "verdict": row_dict.get("verdict"),
+        "authenticity": row_dict.get("authenticity"),
+        "metadata": meta,
+        "data_url": spec_data
+    }
 
 @router.post("", response_model=CallRecordResponse)
 async def create_call(call: CallRecordCreate, background_tasks: BackgroundTasks):
@@ -64,8 +111,8 @@ async def create_call(call: CallRecordCreate, background_tasks: BackgroundTasks)
     time_str = now.strftime("%H:%M")
 
     cursor.execute("""
-    INSERT INTO calls (id, caller, agent, date, time, duration, verdict, authenticity, identity, context, flagged_phrases)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO calls (id, caller, agent, date, time, duration, verdict, authenticity, identity, context, flagged_phrases, spectrogram_data, spectrogram_metadata)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         call_id,
         call.caller,
@@ -77,7 +124,9 @@ async def create_call(call: CallRecordCreate, background_tasks: BackgroundTasks)
         call.authenticity,
         call.identity,
         call.context,
-        json.dumps(call.flagged_phrases)
+        json.dumps(call.flagged_phrases),
+        call.spectrogram_data,
+        call.spectrogram_metadata
     ))
     conn.commit()
     conn.close()
@@ -108,7 +157,9 @@ async def create_call(call: CallRecordCreate, background_tasks: BackgroundTasks)
         authenticity=call.authenticity,
         identity=call.identity,
         context=call.context,
-        flaggedPhrases=call.flagged_phrases
+        flaggedPhrases=call.flagged_phrases,
+        spectrogramData=call.spectrogram_data,
+        spectrogramMetadata=call.spectrogram_metadata
     )
 
 @router.delete("/all")

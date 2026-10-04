@@ -28,6 +28,25 @@ export interface AuthResponse {
   expires_at: string;
 }
 
+export interface SpectrogramEvidence {
+  available: boolean;
+  analysis_id?: string;
+  filename?: string;
+  sample_rate?: number;
+  n_fft?: number;
+  hop_length?: number;
+  frequency_scale?: string;
+  frequency_range?: [number, number];
+  duration_seconds?: number;
+  time_range?: [number, number];
+  preprocessing_version?: string;
+  num_frames?: number;
+  num_bins?: number;
+  data_url?: string;
+  summary?: string;
+  reason?: string;
+}
+
 export interface CallRecord {
   id: string;
   caller: string;
@@ -40,6 +59,8 @@ export interface CallRecord {
   identity: number;
   context: string;
   flaggedPhrases: string[];
+  spectrogramData?: string | null;
+  spectrogramMetadata?: string | null;
 }
 
 export interface VoiceProfile {
@@ -149,6 +170,7 @@ export interface AudioAnalysisResponse {
   jitter?: number;
   kurtosis?: number;
   syntheticIndicators?: string[];
+  spectrogram?: SpectrogramEvidence;
 }
 
 // ─── API CLIENT FUNCTIONS ───
@@ -176,9 +198,32 @@ export async function saveCall(call: Omit<CallRecord, "id" | "date" | "time">): 
       identity: call.identity,
       context: call.context,
       flagged_phrases: call.flaggedPhrases,
+      spectrogram_data: call.spectrogramData || null,
+      spectrogram_metadata: call.spectrogramMetadata || null,
     }),
   });
   if (!res.ok) throw new Error("Failed to persist call record");
+  return res.json();
+}
+
+export async function getCallEvidence(callId: string): Promise<{
+  available: boolean;
+  analysis_id?: string;
+  caller?: string;
+  verdict?: string;
+  authenticity?: number;
+  metadata?: SpectrogramEvidence;
+  data_url?: string;
+  reason?: string;
+}> {
+  const res = await fetch(`${API_BASE}/api/calls/${encodeURIComponent(callId)}/evidence`, { cache: "no-store" });
+  if (!res.ok) {
+    return {
+      available: false,
+      analysis_id: callId,
+      reason: "Visual evidence unavailable for this record (retention policy expired or not logged)."
+    };
+  }
   return res.json();
 }
 

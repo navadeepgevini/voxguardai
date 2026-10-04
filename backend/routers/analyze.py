@@ -7,6 +7,7 @@ from engines.aasist import aasist_engine
 from engines.ecapa import ecapa_engine
 from engines.nlp import nlp_engine
 from engines.amvtf import amvtf_engine
+from engines.spectrogram import spectrogram_engine
 from models import AudioAnalysisResponse, TranscriptMessage
 
 router = APIRouter(prefix="/api/analyze", tags=["Analysis"])
@@ -98,6 +99,13 @@ async def analyze_audio_upload(
         )
     )
 
+    # 5. Generate official Analysis Evidence Spectrogram directly from normalized audio used for inference
+    norm_samples, _ = aasist_engine._decode_audio(content)
+    spec_evidence = spectrogram_engine.generate_spectrogram(
+        samples=norm_samples,
+        filename=file.filename or "uploaded_audio.wav"
+    )
+
     return AudioAnalysisResponse(
         callerName=caller_label,
         enrolledTarget=id_res["matchedProfile"],
@@ -119,7 +127,8 @@ async def analyze_audio_upload(
         zcr=auth_res.get("zcr"),
         jitter=auth_res.get("jitter"),
         kurtosis=auth_res.get("kurtosis"),
-        syntheticIndicators=auth_res.get("syntheticIndicators", [])
+        syntheticIndicators=auth_res.get("syntheticIndicators", []),
+        spectrogram=spec_evidence
     )
 
 @router.post("/live", response_model=AudioAnalysisResponse)
@@ -200,6 +209,15 @@ async def analyze_live_mic(
         )
     ]
 
+    # Generate live analysis spectrogram if audio frame present
+    spec_evidence = None
+    if audio_bytes and len(audio_bytes) >= 16:
+        norm_live_samples, _ = aasist_engine._decode_audio(audio_bytes)
+        spec_evidence = spectrogram_engine.generate_spectrogram(
+            samples=norm_live_samples,
+            filename=caller_name or "live_mic_stream.wav"
+        )
+
     return AudioAnalysisResponse(
         callerName=caller_name,
         enrolledTarget=id_res["matchedProfile"],
@@ -221,5 +239,6 @@ async def analyze_live_mic(
         zcr=auth_res.get("zcr"),
         jitter=auth_res.get("jitter"),
         kurtosis=auth_res.get("kurtosis"),
-        syntheticIndicators=auth_res.get("syntheticIndicators", [])
+        syntheticIndicators=auth_res.get("syntheticIndicators", []),
+        spectrogram=spec_evidence
     )

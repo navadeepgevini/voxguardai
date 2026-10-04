@@ -1,6 +1,24 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
 
+class SpectrogramEvidence(BaseModel):
+    available: bool = True
+    analysis_id: Optional[str] = None
+    filename: Optional[str] = None
+    sample_rate: Optional[int] = 16000
+    n_fft: Optional[int] = 512
+    hop_length: Optional[int] = 256
+    frequency_scale: Optional[str] = "Linear (0 - 8000 Hz)"
+    frequency_range: Optional[List[float]] = [0.0, 8000.0]
+    duration_seconds: Optional[float] = None
+    time_range: Optional[List[float]] = None
+    preprocessing_version: Optional[str] = "AMVTF-v2.1-Preprocessed-16kHz"
+    num_frames: Optional[int] = None
+    num_bins: Optional[int] = None
+    data_url: Optional[str] = None
+    summary: Optional[str] = None
+    reason: Optional[str] = None
+
 class CallRecordCreate(BaseModel):
     caller: str
     agent: str
@@ -10,6 +28,8 @@ class CallRecordCreate(BaseModel):
     identity: float
     context: str
     flagged_phrases: List[str] = []
+    spectrogram_data: Optional[str] = None
+    spectrogram_metadata: Optional[str] = None
 
 class CallRecordResponse(BaseModel):
     id: str
@@ -23,6 +43,8 @@ class CallRecordResponse(BaseModel):
     identity: float
     context: str
     flaggedPhrases: List[str]
+    spectrogramData: Optional[str] = None
+    spectrogramMetadata: Optional[str] = None
 
 class VoiceProfileCreate(BaseModel):
     name: str
@@ -80,6 +102,7 @@ class AudioAnalysisResponse(BaseModel):
     jitter: Optional[float] = None
     kurtosis: Optional[float] = None
     syntheticIndicators: List[str] = []
+    spectrogram: Optional[SpectrogramEvidence] = None
 
 class UserRegisterRequest(BaseModel):
     username: str
