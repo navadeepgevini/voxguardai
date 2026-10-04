@@ -1,0 +1,725 @@
+import sqlite3
+import json
+import os
+import re
+import hashlib
+import secrets
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+try:
+    import psycopg2
+    import psycopg2.extras
+    PSYCOPG2_AVAILABLE = True
+except ImportError:
+    psycopg2 = None
+    PSYCOPG2_AVAILABLE = False
+
+# Load environment variables from backend/.env or root .env
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
+
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+
+# SQLite fallback path
+DB_PATH = os.path.join(os.path.dirname(__file__), "voxguard.db")
+
+def is_postgres_configured() -> bool:
+    url = os.environ.get("DATABASE_URL", DATABASE_URL).strip()
+    return bool(PSYCOPG2_AVAILABLE and url and (url.startswith("postgresql://") or url.startswith("postgres://")))
+
+IS_POSTGRES = is_postgres_configured()
+
+class PostgresCursorWrapper:
+    def __init__(self, raw_cursor):
+        self.cursor = raw_cursor
+
+    def _convert_query(self, query: str) -> str:
+        # 1. Convert INSERT OR REPLACE INTO settings ...
+        if "INSERT OR REPLACE INTO settings" in query:
+            query = re.sub(
+                r"INSERT\s+OR\s+REPLACE\s+INTO\s+settings\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)",
+                r"INSERT INTO settings (\1) VALUES (\2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+                query,
+                flags=re.IGNORECASE
+            )
+        # 2. Convert standard SQLite '?' parameter placeholders to PostgreSQL '%s'
+        converted = query.replace("?", "%s")
+        return converted
+
+    def execute(self, query: str, params=None):
+        sql = self._convert_query(query)
+        if params is not None:
+            if isinstance(params, list):
+                params = tuple(params)
+            elif not isinstance(params, (tuple, dict)):
+                params = (params,)
+            return self.cursor.execute(sql, params)
+        return self.cursor.execute(sql)
+
+    def executemany(self, query: str, param_list):
+        sql = self._convert_query(query)
+        return self.cursor.executemany(sql, param_list)
+
+    def fetchone(self):
+        return self.cursor.fetchone()
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+    def fetchmany(self, size=None):
+        return self.cursor.fetchmany(size)
+
+    @property
+    def rowcount(self):
+        return self.cursor.rowcount
+
+    @property
+    def description(self):
+        return self.cursor.description
+
+    def close(self):
+        try:
+            self.cursor.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+
+class PostgresConnectionWrapper:
+    def __init__(self, raw_conn):
+        self.conn = raw_conn
+
+    def cursor(self):
+        raw_cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        return PostgresCursorWrapper(raw_cur)
+
+    def commit(self):
+        self.conn.commit()
+
+    def rollback(self):
+        try:
+            self.conn.rollback()
+        except Exception:
+            pass
+
+    def close(self):
+        try:
+            self.conn.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            self.rollback()
+        else:
+            self.commit()
+        self.close()
+
+
+def sanitize_postgres_url(raw_url: str) -> str:
+    """
+    Cleans and normalizes PostgreSQL connection URLs:
+    1. Normalizes 'postgres://' scheme to 'postgresql://' for psycopg2.
+    2. Auto-corrects Supabase URLs on IPv4 platforms (e.g. Render Free Tier):
+       - 'db.<ref>.supabase.co' only resolves over IPv6, causing connection failure on IPv4 networks.
+       - Special characters in passwords (#, @) require proper URL-encoding (%23, %40).
+       - Automatically reroutes to the IPv4 connection pooler endpoint with encoded credentials.
+    3. Handles accidentally doubled '@@' separators or misplaced leading '@' characters.
+    """
+    if not raw_url:
+        return ""
+    url = raw_url.strip().strip('"').strip("'")
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://"):]
+    
+    # Auto-repair for project's Supabase instance if unencoded or direct IPv6 host was entered
+    if "bhnniuxikxkxuypkuobo" in url and ("db.bhnniuxikxkxuypkuobo" in url or "@@" in url or "#" in url or "@" in url.split(":")[2].split("@")[0] if len(url.split(":")) > 2 and "@" in url.split(":")[2] else False):
+        print("[Database] Auto-normalizing Supabase URL to IPv4 connection pooler endpoint.")
+        return "postgresql://postgres.bhnniuxikxkxuypkuobo:Mahesh%233033%40@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres?sslmode=require"
+
+    if "@@" in url:
+        url = url.replace("@@", "@")
+        
+    return url
+
+
+def get_connection():
+    """
+    Returns an active database connection.
+    If DATABASE_URL is configured (e.g. Supabase, Neon, Render Postgres), returns a Cloud PostgreSQL connection.
+    Otherwise, returns a local SQLite connection (voxguard.db).
+    """
+    db_url = os.environ.get("DATABASE_URL", DATABASE_URL).strip()
+    if PSYCOPG2_AVAILABLE and db_url and (db_url.startswith("postgresql://") or db_url.startswith("postgres://")):
+        try:
+            pg_url = sanitize_postgres_url(db_url)
+            
+            # Connect with sslmode require if not already specified in URL
+            if "sslmode=" not in pg_url:
+                conn = psycopg2.connect(pg_url, sslmode="require")
+            else:
+                conn = psycopg2.connect(pg_url)
+            
+            return PostgresConnectionWrapper(conn)
+        except Exception as e:
+            print(f"[Database] PostgreSQL connection error: {e}. Falling back to local SQLite.")
+    
+    # SQLite fallback
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def hash_password(password: str, salt: str = None):
+    if not salt:
+        salt = secrets.token_hex(16)
+    pw_hash = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 100000).hex()
+    return pw_hash, salt
+
+
+def verify_password(password: str, salt: str, expected_hash: str) -> bool:
+    pw_hash, _ = hash_password(password, salt)
+    return secrets.compare_digest(pw_hash, expected_hash)
+
+
+def init_db(reset: bool = False):
+    """
+    Initializes database schema (either Cloud PostgreSQL or local SQLite) cleanly.
+    Creates calls, voice_profiles, users, sessions, api_keys, payment_orders, and settings tables.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    if isinstance(conn, PostgresConnectionWrapper):
+        # PostgreSQL Schema Initialization
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS calls (
+            id TEXT PRIMARY KEY,
+            caller TEXT NOT NULL,
+            agent TEXT NOT NULL,
+            date TEXT NOT NULL,
+            time TEXT NOT NULL,
+            duration TEXT NOT NULL,
+            verdict TEXT NOT NULL,
+            authenticity DOUBLE PRECISION NOT NULL,
+            identity DOUBLE PRECISION NOT NULL,
+            context TEXT NOT NULL,
+            flagged_phrases TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS voice_profiles (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            department TEXT NOT NULL,
+            enrolled_date TEXT NOT NULL,
+            last_verified TEXT NOT NULL,
+            samples INTEGER NOT NULL,
+            confidence DOUBLE PRECISION NOT NULL,
+            status TEXT NOT NULL,
+            embedding_quality TEXT NOT NULL,
+            embedding_vector TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            salt TEXT NOT NULL,
+            full_name TEXT NOT NULL,
+            role TEXT DEFAULT 'SOC Analyst',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sessions (
+            token TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        """)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_keys (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            key TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            plan_tier TEXT NOT NULL,
+            tokens_remaining INTEGER NOT NULL,
+            tokens_total INTEGER NOT NULL,
+            price_paid DOUBLE PRECISION DEFAULT 0.0,
+            balance_inr DOUBLE PRECISION DEFAULT 0.0,
+            minutes_remaining DOUBLE PRECISION DEFAULT 15.0,
+            minutes_total DOUBLE PRECISION DEFAULT 15.0,
+            rate_per_min_inr DOUBLE PRECISION DEFAULT 2.0,
+            features_enabled TEXT,
+            status TEXT DEFAULT 'ACTIVE',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_used_at TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        """)
+
+        # Postgres Column migrations if columns don't exist
+        for col, col_type in [
+            ("balance_inr", "DOUBLE PRECISION DEFAULT 0.0"),
+            ("minutes_remaining", "DOUBLE PRECISION DEFAULT 15.0"),
+            ("minutes_total", "DOUBLE PRECISION DEFAULT 15.0"),
+            ("rate_per_min_inr", "DOUBLE PRECISION DEFAULT 2.0"),
+            ("features_enabled", "TEXT")
+        ]:
+            try:
+                cursor.execute(f"ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS {col} {col_type};")
+            except Exception:
+                pass
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS payment_orders (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            plan_tier TEXT NOT NULL,
+            amount_inr DOUBLE PRECISION NOT NULL,
+            payer_upi_id TEXT NOT NULL,
+            payer_name TEXT,
+            payer_email TEXT,
+            merchant_vpa TEXT DEFAULT 'voxguard.business@icici',
+            upi_intent_uri TEXT NOT NULL,
+            status TEXT DEFAULT 'PENDING',
+            utr_reference TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP NOT NULL,
+            completed_at TIMESTAMP,
+            target_key_id TEXT,
+            topup_type TEXT,
+            units_to_add DOUBLE PRECISION DEFAULT 0.0,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+        );
+        """)
+
+        for col, col_type in [
+            ("target_key_id", "TEXT"),
+            ("topup_type", "TEXT"),
+            ("units_to_add", "DOUBLE PRECISION DEFAULT 0.0")
+        ]:
+            try:
+                cursor.execute(f"ALTER TABLE payment_orders ADD COLUMN IF NOT EXISTS {col} {col_type};")
+            except Exception:
+                pass
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
+        """)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS notification_jobs (
+            id TEXT PRIMARY KEY,
+            analysis_id TEXT,
+            idempotency_key TEXT UNIQUE,
+            event_type TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            policy_version INTEGER DEFAULT 1,
+            recipient_email TEXT NOT NULL,
+            status TEXT NOT NULL,
+            provider_acceptance_time TEXT,
+            retry_count INTEGER DEFAULT 0,
+            error_category TEXT,
+            message_summary TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
+        cursor.execute("SELECT value FROM settings WHERE key = 'global'")
+        if not cursor.fetchone():
+            default_settings = {
+                "aasistThreshold": 50,
+                "ecapaThreshold": 70,
+                "nlpSensitivity": 65,
+                "emailAlerts": True,
+                "slackAlerts": False,
+                "criticalOnly": False,
+                "autoBlock": True,
+                "apiKey": "vxg_sk_live_99214820491823904812",
+                "webhookUrl": "https://api.voxguard.security/hooks/amvtf-alerts"
+            }
+            cursor.execute(
+                "INSERT INTO settings (key, value) VALUES ('global', %s) ON CONFLICT (key) DO NOTHING",
+                (json.dumps(default_settings),)
+            )
+
+        cursor.execute("SELECT value FROM settings WHERE key = 'notification_policy'")
+        if not cursor.fetchone():
+            default_notif_policy = {
+                "enabled": True,
+                "policy_version": 1,
+                "recipients": [
+                    {
+                        "id": "rcp_lead",
+                        "email": "soc-lead@voxguard.security",
+                        "label": "SOC Incident Response Lead",
+                        "status": "ADMIN_APPROVED_DEMO",
+                        "created_at": "2026-10-03 20:00:00"
+                    },
+                    {
+                        "id": "rcp_evaluator",
+                        "email": "evaluator@security.ac.in",
+                        "label": "Audit & Compliance Evaluator",
+                        "status": "ADMIN_APPROVED_DEMO",
+                        "created_at": "2026-10-03 20:00:00"
+                    }
+                ],
+                "notify_on_synthetic": True,
+                "notify_on_high_risk": True,
+                "notify_on_inconclusive": False,
+                "notify_on_identity_mismatch": False,
+                "cooldown_minutes": 5,
+                "max_alerts_per_hour": 15,
+                "dashboard_base_url": "http://localhost:3000"
+            }
+            cursor.execute(
+                "INSERT INTO settings (key, value) VALUES ('notification_policy', %s) ON CONFLICT (key) DO NOTHING",
+                (json.dumps(default_notif_policy),)
+            )
+
+        cursor.execute("SELECT COUNT(*) FROM users")
+        row = cursor.fetchone()
+        count = row[0] if row else 0
+        if count == 0:
+            pw_hash, salt = hash_password("voxguard2026")
+            cursor.execute("""
+            INSERT INTO users (id, username, email, password_hash, salt, full_name, role)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                "usr_default_operator",
+                "operator",
+                "operator@voxguard.security",
+                pw_hash,
+                salt,
+                "Security Operator",
+                "Lead SOC Analyst"
+            ))
+
+        # Ensure Evaluator account exists
+        cursor.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(%s) OR LOWER(username) = LOWER(%s)", ("Evaluator@security.ac.in", "evaluator"))
+        if not cursor.fetchone():
+            eval_pw_hash, eval_salt = hash_password("123456")
+            cursor.execute("""
+            INSERT INTO users (id, username, email, password_hash, salt, full_name, role)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO NOTHING
+            """, (
+                "usr_default_evaluator",
+                "evaluator",
+                "Evaluator@security.ac.in",
+                eval_pw_hash,
+                eval_salt,
+                "Security Evaluator",
+                "Lead SOC Analyst"
+            ))
+
+        conn.commit()
+        conn.close()
+        return
+
+    # SQLite Schema Initialization
+    if reset and os.path.exists(DB_PATH):
+        try:
+            os.remove(DB_PATH)
+        except Exception:
+            pass
+
+    # Real Calls table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS calls (
+        id TEXT PRIMARY KEY,
+        caller TEXT NOT NULL,
+        agent TEXT NOT NULL,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        duration TEXT NOT NULL,
+        verdict TEXT NOT NULL,
+        authenticity REAL NOT NULL,
+        identity REAL NOT NULL,
+        context TEXT NOT NULL,
+        flagged_phrases TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # Real Voice profiles table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS voice_profiles (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        department TEXT NOT NULL,
+        enrolled_date TEXT NOT NULL,
+        last_verified TEXT NOT NULL,
+        samples INTEGER NOT NULL,
+        confidence REAL NOT NULL,
+        status TEXT NOT NULL,
+        embedding_quality TEXT NOT NULL,
+        embedding_vector TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # Users table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        salt TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        role TEXT DEFAULT 'SOC Analyst',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # Sessions table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+
+    # API Keys & Token Billing table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS api_keys (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        key TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        plan_tier TEXT NOT NULL,
+        tokens_remaining INTEGER NOT NULL,
+        tokens_total INTEGER NOT NULL,
+        price_paid REAL DEFAULT 0.0,
+        balance_inr REAL DEFAULT 0.0,
+        minutes_remaining REAL DEFAULT 15.0,
+        minutes_total REAL DEFAULT 15.0,
+        rate_per_min_inr REAL DEFAULT 2.0,
+        features_enabled TEXT,
+        status TEXT DEFAULT 'ACTIVE',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_used_at TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Safe migration for usage-based billing columns in existing api_keys tables
+    cursor.execute("PRAGMA table_info(api_keys)")
+    existing_cols = {row[1] for row in cursor.fetchall()}
+    billing_cols = [
+        ("balance_inr", "REAL DEFAULT 0.0"),
+        ("minutes_remaining", "REAL DEFAULT 15.0"),
+        ("minutes_total", "REAL DEFAULT 15.0"),
+        ("rate_per_min_inr", "REAL DEFAULT 2.0"),
+        ("features_enabled", "TEXT")
+    ]
+    for col_name, col_def in billing_cols:
+        if col_name not in existing_cols:
+            try:
+                cursor.execute(f"ALTER TABLE api_keys ADD COLUMN {col_name} {col_def}")
+            except Exception:
+                pass
+
+    # Payment Orders table for real UPI Collect & verification
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS payment_orders (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        plan_tier TEXT NOT NULL,
+        amount_inr REAL NOT NULL,
+        payer_upi_id TEXT NOT NULL,
+        payer_name TEXT,
+        payer_email TEXT,
+        merchant_vpa TEXT DEFAULT 'voxguard.business@icici',
+        upi_intent_uri TEXT NOT NULL,
+        status TEXT DEFAULT 'PENDING',
+        utr_reference TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        completed_at TIMESTAMP,
+        target_key_id TEXT,
+        topup_type TEXT,
+        units_to_add REAL DEFAULT 0.0,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    )
+    """)
+
+    cursor.execute("PRAGMA table_info(payment_orders)")
+    po_cols = {row[1] for row in cursor.fetchall()}
+    for col_name, col_def in [
+        ("target_key_id", "TEXT"),
+        ("topup_type", "TEXT"),
+        ("units_to_add", "REAL DEFAULT 0.0")
+    ]:
+        if col_name not in po_cols:
+            try:
+                cursor.execute(f"ALTER TABLE payment_orders ADD COLUMN {col_name} {col_def}")
+            except Exception:
+                pass
+
+    # System configuration settings table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    )
+    """)
+
+    # Notification jobs and delivery audit table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS notification_jobs (
+        id TEXT PRIMARY KEY,
+        analysis_id TEXT,
+        idempotency_key TEXT UNIQUE,
+        event_type TEXT NOT NULL,
+        severity TEXT NOT NULL,
+        policy_version INTEGER DEFAULT 1,
+        recipient_email TEXT NOT NULL,
+        status TEXT NOT NULL,
+        provider_acceptance_time TEXT,
+        retry_count INTEGER DEFAULT 0,
+        error_category TEXT,
+        message_summary TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # Initialize default operational engine thresholds if not present
+    cursor.execute("SELECT value FROM settings WHERE key = 'global'")
+    if not cursor.fetchone():
+        default_settings = {
+            "aasistThreshold": 50,
+            "ecapaThreshold": 70,
+            "nlpSensitivity": 65,
+            "emailAlerts": True,
+            "slackAlerts": False,
+            "criticalOnly": False,
+            "autoBlock": True,
+            "apiKey": "vxg_sk_live_99214820491823904812",
+            "webhookUrl": "https://api.voxguard.security/hooks/amvtf-alerts"
+        }
+        cursor.execute("""
+        INSERT INTO settings (key, value) VALUES ('global', ?)
+        """, (json.dumps(default_settings),))
+
+    cursor.execute("SELECT value FROM settings WHERE key = 'notification_policy'")
+    if not cursor.fetchone():
+        default_notif_policy = {
+            "enabled": True,
+            "policy_version": 1,
+            "recipients": [
+                {
+                    "id": "rcp_lead",
+                    "email": "soc-lead@voxguard.security",
+                    "label": "SOC Incident Response Lead",
+                    "status": "ADMIN_APPROVED_DEMO",
+                    "created_at": "2026-10-03 20:00:00"
+                },
+                {
+                    "id": "rcp_evaluator",
+                    "email": "evaluator@security.ac.in",
+                    "label": "Audit & Compliance Evaluator",
+                    "status": "ADMIN_APPROVED_DEMO",
+                    "created_at": "2026-10-03 20:00:00"
+                }
+            ],
+            "notify_on_synthetic": True,
+            "notify_on_high_risk": True,
+            "notify_on_inconclusive": False,
+            "notify_on_identity_mismatch": False,
+            "cooldown_minutes": 5,
+            "max_alerts_per_hour": 15,
+            "dashboard_base_url": "http://localhost:3000"
+        }
+        cursor.execute("""
+        INSERT INTO settings (key, value) VALUES ('notification_policy', ?)
+        """, (json.dumps(default_notif_policy),))
+
+    # Pre-seed default operator account if no users exist
+    cursor.execute("SELECT COUNT(*) FROM users")
+    if cursor.fetchone()[0] == 0:
+        pw_hash, salt = hash_password("voxguard2026")
+        cursor.execute("""
+        INSERT INTO users (id, username, email, password_hash, salt, full_name, role)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            "usr_default_operator",
+            "operator",
+            "operator@voxguard.security",
+            pw_hash,
+            salt,
+            "Security Operator",
+            "Lead SOC Analyst"
+        ))
+
+    # Ensure default evaluator account exists
+    cursor.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(?) OR LOWER(username) = LOWER(?)", ("Evaluator@security.ac.in", "evaluator"))
+    if not cursor.fetchone():
+        eval_pw_hash, eval_salt = hash_password("123456")
+        cursor.execute("""
+        INSERT INTO users (id, username, email, password_hash, salt, full_name, role)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            "usr_default_evaluator",
+            "evaluator",
+            "Evaluator@security.ac.in",
+            eval_pw_hash,
+            eval_salt,
+            "Security Evaluator",
+            "Lead SOC Analyst"
+        ))
+
+    conn.commit()
+    conn.close()
+
+
+def clear_all_calls():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM calls")
+    conn.commit()
+    conn.close()
+
+
+def clear_all_identities():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM voice_profiles")
+    conn.commit()
+    conn.close()
+
+
+if __name__ == "__main__":
+    init_db(reset=False)
+    print("Database verified and schema initialized successfully.")
