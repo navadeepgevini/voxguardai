@@ -181,15 +181,15 @@ async def analyze_live_mic(
 
     print(f"[LIVE MIC STREAM] audio_bytes={len(audio_bytes) if audio_bytes else 0} | auth={auth_res.get('authenticity')} | status={auth_res.get('authStatus')} | indicators={auth_res.get('syntheticIndicators')}")
 
-    # 3. Transcribe live audio stream if audio chunk received
+    # 3. Transcribe live audio stream: prioritize client transcript for zero latency
     extracted_text = transcript.strip() if transcript and transcript.strip() else ""
-    if audio_bytes and len(audio_bytes) >= 1000:
-        chunk_transcript = nlp_engine.transcribe_audio(audio_bytes)
-        if chunk_transcript:
-            if extracted_text and chunk_transcript.lower() not in extracted_text.lower():
-                extracted_text = f"{extracted_text} {chunk_transcript}".strip()
-            else:
-                extracted_text = chunk_transcript
+    if not extracted_text and audio_bytes and len(audio_bytes) >= 24000:
+        try:
+            chunk_transcript = nlp_engine.transcribe_audio(audio_bytes)
+            if chunk_transcript:
+                extracted_text = chunk_transcript.strip()
+        except Exception as e:
+            print(f"[LIVE ASR FALLBACK] {e}")
 
     nlp_res = nlp_engine.analyze_text(text=extracted_text)
 

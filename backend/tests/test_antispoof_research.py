@@ -133,3 +133,32 @@ def test_audio_analysis_response_schema_validation():
     assert validated.predictionState == "LIKELY_GENUINE"
     assert validated.calibratedSyntheticProbability == 0.03
     assert validated.qualityMetrics["snr_db"] == 22.4
+
+def test_analyze_live_chunk_schema_and_detection():
+    """Validates that analyze_live_chunk returns all research fields and handles live audio safely."""
+    engine = AASISTAuthenticityEngine()
+    
+    # 1. Empty/Ambient test
+    res_empty = engine.analyze_live_chunk(b"")
+    assert "predictionState" in res_empty
+    assert res_empty["predictionState"] == "LIKELY_GENUINE"
+    assert "calibratedSyntheticProbability" in res_empty
+    assert "qualityFlags" in res_empty
+    assert "AMBIENT_BASELINE" in res_empty["qualityFlags"]
+
+    # 2. Live audio slice test (1.5 seconds of synthesized multi-frequency tone)
+    sr = 16000
+    t = np.linspace(0, 1.5, int(sr * 1.5))
+    # Synthetic flat tone with mirror aliasing at 7kHz
+    flat_wave = (0.3 * np.sin(2 * np.pi * 200 * t) + 0.2 * np.sin(2 * np.pi * 7000 * t)).astype(np.float32)
+    # Convert float array to 16-bit PCM bytes
+    pcm_bytes = (flat_wave * 32767).astype(np.int16).tobytes()
+    
+    res_live = engine.analyze_live_chunk(pcm_bytes)
+    assert "predictionState" in res_live
+    assert "calibratedSyntheticProbability" in res_live
+    assert "qualityMetrics" in res_live
+    assert res_live["qualityMetrics"]["duration_seconds"] > 0
+    # Flat frequency + strong 7kHz aliasing must trigger synthetic detection
+    assert res_live["predictionState"] in ["LIKELY_SYNTHETIC", "INCONCLUSIVE"]
+

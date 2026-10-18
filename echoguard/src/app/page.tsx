@@ -122,6 +122,9 @@ export default function HybridDashboard() {
   const [customTranscript, setCustomTranscript] = useState("");
   const [liveSpeechText, setLiveSpeechText] = useState("");
   const liveSpeechTextRef = useRef<string>("");
+  const finalTranscriptRef = useRef<string>("");
+  const micActiveRef = useRef<boolean>(false);
+  const isRecognitionRunningRef = useRef<boolean>(false);
 
   // Active analysis data from backend
   const [currentScenario, setCurrentScenario] = useState<AudioAnalysisResponse | null>(null);
@@ -369,6 +372,8 @@ export default function HybridDashboard() {
   const toggleMicrophone = async () => {
     if (isMicActive) {
       // Stop mic streaming
+      micActiveRef.current = false;
+      isRecognitionRunningRef.current = false;
       if (liveIntervalRef.current) {
         clearInterval(liveIntervalRef.current);
         liveIntervalRef.current = null;
@@ -410,7 +415,7 @@ export default function HybridDashboard() {
         }
         const pcm16k = downsampleBuffer(merged, currentSr, 16000);
         const fullWavBlob = encodeWavPcm16(pcm16k, 16000);
-        const finalTranscript = liveSpeechTextRef.current || liveSpeechText.trim() || customTranscript.trim();
+        const finalTranscript = liveSpeechTextRef.current || finalTranscriptRef.current || liveSpeechText.trim() || customTranscript.trim();
         await processLiveAnalysis(finalTranscript, fullWavBlob, true);
       }
       return;
@@ -425,8 +430,10 @@ export default function HybridDashboard() {
         },
       }).catch(() => navigator.mediaDevices.getUserMedia({ audio: true }));
       micStreamRef.current = stream;
+      micActiveRef.current = true;
       pcmBufferRef.current = [];
       liveAlertTriggeredRef.current = false;
+      finalTranscriptRef.current = "";
       liveSpeechTextRef.current = "";
       setLiveSpeechText("");
 
@@ -467,30 +474,70 @@ export default function HybridDashboard() {
       processor.connect(muteNode);
       muteNode.connect(ctx.destination);
 
-      // Setup Web Speech API for live speech-to-text
+      // Setup Web Speech API with resilient continuous recognition & auto-restart
       const SpeechRecognition =
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognitionRef.current = recognition;
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = "en-US";
-
-        recognition.onresult = (event: any) => {
-          let transcript = "";
-          for (let i = 0; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript + " ";
-          }
-          const clean = transcript.trim();
-          liveSpeechTextRef.current = clean;
-          setLiveSpeechText(clean);
-        };
-
-        recognition.onerror = () => {};
         try {
+          const recognition = new SpeechRecognition();
+          recognitionRef.current = recognition;
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = navigator.language || "en-US";
+
+          recognition.onresult = (event: any) => {
+            let interim = "";
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              const part = event.results[i][0]?.transcript || "";
+              if (event.results[i].isFinal) {
+                const cleaned = part.trim();
+                if (cleaned) {
+                  finalTranscriptRef.current += (finalTranscriptRef.current ? " " : "") + cleaned;
+                }
+              } else {
+                interim += part;
+              }
+            }
+            const combined = (finalTranscriptRef.current + " " + interim).trim();
+            liveSpeechTextRef.current = combined;
+            setLiveSpeechText(combined);
+          };
+
+          recognition.onstart = () => {
+            isRecognitionRunningRef.current = true;
+          };
+
+          recognition.onerror = (e: any) => {
+            if (e?.error !== "no-speech" && e?.error !== "aborted") {
+              console.warn("[SpeechRecognition Warning]", e?.error);
+            }
+          };
+
+          recognition.onend = () => {
+            isRecognitionRunningRef.current = false;
+            // Chrome drops continuous recognition on pauses; auto-restart seamlessly while mic is active!
+            if (micActiveRef.current) {
+              try {
+                recognition.start();
+                isRecognitionRunningRef.current = true;
+              } catch {
+                setTimeout(() => {
+                  if (micActiveRef.current && !isRecognitionRunningRef.current) {
+                    try {
+                      recognition.start();
+                      isRecognitionRunningRef.current = true;
+                    } catch {}
+                  }
+                }, 300);
+              }
+            }
+          };
+
           recognition.start();
-        } catch {}
+          isRecognitionRunningRef.current = true;
+        } catch (recErr) {
+          console.warn("[SpeechRecognition Setup Warning]", recErr);
+        }
       }
 
       setIsMicActive(true);
@@ -523,7 +570,7 @@ export default function HybridDashboard() {
         }
         const pcm16k = downsampleBuffer(merged, ctx.sampleRate, 16000);
         const wavBlob = encodeWavPcm16(pcm16k, 16000);
-        const currentSpokenText = liveSpeechTextRef.current || "";
+        const currentSpokenText = liveSpeechTextRef.current || finalTranscriptRef.current || "";
         await processLiveAnalysis(currentSpokenText, wavBlob, false);
       }, 1800);
     } catch {
@@ -537,7 +584,7 @@ export default function HybridDashboard() {
     if (persist) setIsPersisted(false);
 
     try {
-      const effectiveText = transcriptText || customTranscript || "";
+      const effectiveText = transcriptText || liveSpeechTextRef.current || customTranscript || "";
       const data = await analyzeLiveMic(
         effectiveText,
         selectedTargetId || undefined,
@@ -546,9 +593,11 @@ export default function HybridDashboard() {
       setCurrentScenario(data);
       if (data.transcript && data.transcript.length > 0) {
         const callerMsg = data.transcript.find((m) => m.speaker.includes("Caller"));
-        if (callerMsg && callerMsg.text && !callerMsg.text.includes("Microphone audio frame received")) {
+        // Adopt server transcript only when client has no live speech captured
+        if (!liveSpeechTextRef.current && callerMsg && callerMsg.text && !callerMsg.text.includes("Microphone audio frame received")) {
           setLiveSpeechText(callerMsg.text);
           liveSpeechTextRef.current = callerMsg.text;
+          finalTranscriptRef.current = callerMsg.text;
         }
       }
       const computedVerdict: RiskState =
@@ -557,9 +606,11 @@ export default function HybridDashboard() {
       setIsSimulating(true);
 
       const isSyntheticDetected = Boolean(
+        data.predictionState === "LIKELY_SYNTHETIC" ||
         computedVerdict === "CRITICAL" ||
         data.actionType === "TERMINATE" ||
-        (100 - data.authenticity) >= 60 ||
+        data.authenticity <= 50 ||
+        (100 - data.authenticity) >= 50 ||
         (data.authStatus && data.authStatus.toLowerCase().includes("synthetic"))
       );
 
@@ -1327,14 +1378,60 @@ export default function HybridDashboard() {
 
           {/* Live Mic Speech Transcript Display if mic active */}
           {isMicActive && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3 animate-in fade-in">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-              <div className="flex-1 text-xs">
-                <span className="font-semibold text-blue-900">Live Speech Transcription: </span>
-                <span className="text-blue-800 font-mono">
-                  {liveSpeechText || "Listening to speech... Speak into microphone to transcribe."}
+            <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl space-y-2 text-white shadow-md animate-in fade-in">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="font-semibold text-emerald-300 uppercase tracking-wider text-[11px]">
+                    Live Microphone Stream Active
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {currentScenario?.predictionState && (
+                    <Badge
+                      className={cn(
+                        "text-[10px] uppercase font-bold",
+                        currentScenario.predictionState === "LIKELY_SYNTHETIC"
+                          ? "bg-red-500/20 text-red-300 border-red-500/50"
+                          : currentScenario.predictionState === "INCONCLUSIVE"
+                          ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
+                          : "bg-emerald-500/20 text-emerald-300 border-emerald-500/50"
+                      )}
+                    >
+                      {currentScenario.predictionState.replace("_", " ")}
+                    </Badge>
+                  )}
+                  {liveSpeechText && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        finalTranscriptRef.current = "";
+                        liveSpeechTextRef.current = "";
+                        setLiveSpeechText("");
+                      }}
+                      className="text-[10px] text-slate-400 hover:text-white underline cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="p-2.5 bg-slate-950/80 rounded-lg border border-slate-800/80 text-xs">
+                <span className="text-slate-400 font-semibold">Spoken Transcript: </span>
+                <span className="text-slate-100 font-mono">
+                  {liveSpeechText || "Listening to speech... Speak clearly into your microphone to transcribe in real time."}
                 </span>
               </div>
+              {currentScenario?.authStatus && (
+                <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
+                  <span className="truncate max-w-[70%]">
+                    Acoustic Diagnosis: <strong className="text-slate-200">{currentScenario.authStatus}</strong>
+                  </span>
+                  <span>
+                    Authenticity: <strong className={currentScenario.authenticity <= 50 ? "text-red-400" : "text-emerald-400"}>{currentScenario.authenticity}%</strong>
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>

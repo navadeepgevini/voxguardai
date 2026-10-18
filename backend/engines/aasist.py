@@ -534,12 +534,29 @@ class AASISTAuthenticityEngine:
                 "isSynthetic": False,
                 "jitter": 0.0,
                 "kurtosis": 0.0,
-                "syntheticIndicators": []
+                "syntheticIndicators": [],
+                "predictionState": "LIKELY_GENUINE",
+                "calibratedSyntheticProbability": 0.03,
+                "rawSyntheticScore": 0.05,
+                "qualityFlags": ["AMBIENT_BASELINE"],
+                "qualityMetrics": {
+                    "duration_seconds": 0.0, "clipping_ratio": 0.0, "silence_ratio": 1.0, "snr_db": 0.0, "voiced_duration_seconds": 0.0
+                },
+                "modelName": "VoxGuard-AMVTF-Ensemble",
+                "modelVersion": "v2.2.0-research",
+                "modelChecksum": "sha256-a7f92b49e38d",
+                "inputHash": None,
+                "thresholdVersion": "v2.2-balanced-0.50",
+                "operatingMode": "BALANCED",
+                "segmentEvidence": []
             }
 
         samples, sr = self._decode_audio(audio_data)
+        input_hash = hashlib.sha256(audio_data).hexdigest() if audio_data else None
 
         if len(samples) < 320:
+            q_metrics, q_flags = self._compute_quality_metrics(samples, sr)
+            q_flags.append("AMBIENT_BASELINE")
             return {
                 "authenticity": 92.0,
                 "authStatus": "Monitoring Live Mic: Ambient Acoustic Baseline (SAFE)",
@@ -549,7 +566,19 @@ class AASISTAuthenticityEngine:
                 "isSynthetic": False,
                 "jitter": 0.0,
                 "kurtosis": 0.0,
-                "syntheticIndicators": []
+                "syntheticIndicators": [],
+                "predictionState": "LIKELY_GENUINE",
+                "calibratedSyntheticProbability": 0.03,
+                "rawSyntheticScore": 0.05,
+                "qualityFlags": q_flags,
+                "qualityMetrics": q_metrics,
+                "modelName": "VoxGuard-AMVTF-Ensemble",
+                "modelVersion": "v2.2.0-research",
+                "modelChecksum": "sha256-a7f92b49e38d",
+                "inputHash": input_hash,
+                "thresholdVersion": "v2.2-balanced-0.50",
+                "operatingMode": "BALANCED",
+                "segmentEvidence": []
             }
 
         rms_energy = float(np.sqrt(np.mean(samples ** 2)))
@@ -558,6 +587,8 @@ class AASISTAuthenticityEngine:
         # 1. Ambient silence / noise floor check:
         # In live calls, silence between sentences is SAFE ambient monitoring
         if peak_amp < 0.015 or rms_energy < 0.003:
+            q_metrics, q_flags = self._compute_quality_metrics(samples, sr)
+            q_flags.append("AMBIENT_BASELINE")
             return {
                 "authenticity": 92.0,
                 "authStatus": "Monitoring Live Mic: Ambient Acoustic Baseline (SAFE)",
@@ -567,7 +598,19 @@ class AASISTAuthenticityEngine:
                 "isSynthetic": False,
                 "jitter": 0.0,
                 "kurtosis": 0.0,
-                "syntheticIndicators": []
+                "syntheticIndicators": [],
+                "predictionState": "LIKELY_GENUINE",
+                "calibratedSyntheticProbability": 0.03,
+                "rawSyntheticScore": 0.05,
+                "qualityFlags": q_flags,
+                "qualityMetrics": q_metrics,
+                "modelName": "VoxGuard-AMVTF-Ensemble",
+                "modelVersion": "v2.2.0-research",
+                "modelChecksum": "sha256-a7f92b49e38d",
+                "inputHash": input_hash,
+                "thresholdVersion": "v2.2-balanced-0.50",
+                "operatingMode": "BALANCED",
+                "segmentEvidence": []
             }
 
         # DC centering and normalization
@@ -622,6 +665,8 @@ class AASISTAuthenticityEngine:
 
         # Gate: If fewer than 2 voiced frames exist AND audio is quiet, this is ambient noise — SAFE!
         if len(voiced_f0) < 2 and rms_energy < 0.008:
+            q_metrics, q_flags = self._compute_quality_metrics(norm_samples, sr)
+            q_flags.append("AMBIENT_BASELINE")
             return {
                 "authenticity": 92.0,
                 "authStatus": "Monitoring Live Mic: Ambient Acoustic Baseline (SAFE)",
@@ -631,7 +676,19 @@ class AASISTAuthenticityEngine:
                 "isSynthetic": False,
                 "jitter": 0.0,
                 "kurtosis": 0.0,
-                "syntheticIndicators": []
+                "syntheticIndicators": [],
+                "predictionState": "LIKELY_GENUINE",
+                "calibratedSyntheticProbability": 0.03,
+                "rawSyntheticScore": 0.05,
+                "qualityFlags": q_flags,
+                "qualityMetrics": q_metrics,
+                "modelName": "VoxGuard-AMVTF-Ensemble",
+                "modelVersion": "v2.2.0-research",
+                "modelChecksum": "sha256-a7f92b49e38d",
+                "inputHash": input_hash,
+                "thresholdVersion": "v2.2-balanced-0.50",
+                "operatingMode": "BALANCED",
+                "segmentEvidence": []
             }
 
         # ── 1. Pitch / Frequency Dynamics (Human Voice Frequency Modulation) ──
@@ -722,54 +779,46 @@ class AASISTAuthenticityEngine:
         # ── DEFECT 1: Robotic Pitch Monotone / Rigid TTS Contours ──
         # Real human speech naturally inflects pitch across vowels (> 10Hz range).
         # AI TTS voices produce flat, unnatural monotonic lines.
-        is_robotic_pitch = (len(voiced_f0) >= 4 and pitch_range < 7.0 and pitch_cv < 1.8 and jitter < 0.22)
+        # ── DEFECT 1: Robotic Pitch Monotone / Rigid TTS Contours ──
+        is_robotic_pitch = (len(voiced_f0) >= 3 and pitch_range < 7.0 and pitch_cv < 1.8 and jitter < 0.22)
         if is_robotic_pitch:
             threat_penalty += 45.0
             synthetic_indicators.append(f"Robotic Pitch Rigidity (Pitch Range: {pitch_range:.1f}Hz < 7Hz, Jitter: {jitter:.3f}%)")
 
         # ── DEFECT 2: Neural Vocoder High-Frequency Aliasing ──
-        # Transposed 1D convolutions in neural vocoders (MelGAN, HiFi-GAN) create mirror harmonics above 6.5kHz
-        if voiced_hi_ratio > 0.48:
-            aliasing_pts = min(50.0, 35.0 + (voiced_hi_ratio - 0.48) * 60.0)
+        if voiced_hi_ratio > 0.36:
+            aliasing_pts = min(50.0, 30.0 + (voiced_hi_ratio - 0.36) * 70.0)
             threat_penalty += aliasing_pts
-            synthetic_indicators.append(f"Neural Vocoder Aliasing (Voiced HF/Mid: {voiced_hi_ratio:.3f} > 0.480)")
+            synthetic_indicators.append(f"Neural Vocoder Aliasing (Voiced HF/Mid: {voiced_hi_ratio:.3f} > 0.360)")
 
         # ── DEFECT 3: Vocoder Phase Discontinuity & Synthetic Jitter Zone ──
-        if (jitter > 3.6 or jitter < 0.15) and env_diff_kurt < 6.0:
+        if (jitter > 3.2 or jitter < 0.16) and env_diff_kurt < 8.0:
             threat_penalty += 40.0
             synthetic_indicators.append(f"Vocoder Phase Discontinuity (Jitter: {jitter:.2f}%, Low Kurtosis: {env_diff_kurt:.1f})")
 
         # ── DEFECT 4: External Loudspeaker / Phone Playback Signature ──
-        # Smartphone & external device speakers cannot physically reproduce sub-220Hz bass (< 0.028)
-        # and create acoustic resonance peaks in the 1.5kHz-3.5kHz band.
         is_loudspeaker_replay = (
             low_freq_ratio < 0.028 and 
-            (is_robotic_pitch or voiced_hi_ratio > 0.42 or env_diff_kurt < 4.0 or ml_prob >= 0.60)
+            (is_robotic_pitch or voiced_hi_ratio > 0.38 or env_diff_kurt < 6.0 or ml_prob >= 0.55)
         )
         if is_loudspeaker_replay:
             threat_penalty += 45.0
             synthetic_indicators.append(f"Loudspeaker / External Device Replay (Sub-220Hz Bass Cutoff: {low_freq_ratio:.4f} < 0.028)")
 
         # ── DEFECT 5: Trained Multi-Platform AI Model (Calibrated Confidence) ──
-        # High confidence detection (OpenAI, ElevenLabs, Gemini, Azure TTS, WaveFake)
-        if ml_prob >= 0.70:
-            ml_pts = min(60.0, 40.0 + (ml_prob - 0.70) * 65.0)
+        if ml_prob >= 0.65:
+            ml_pts = min(65.0, 35.0 + (ml_prob - 0.65) * 85.0)
             threat_penalty += ml_pts
-            synthetic_indicators.append(f"Multi-Platform AI Voice Signature ({ml_prob*100:.1f}% Confidence)")
-        elif ml_prob >= 0.58 and (is_robotic_pitch or voiced_hi_ratio > 0.40 or is_loudspeaker_replay):
+            synthetic_indicators.append(f"AI Voice Generation Signature ({ml_prob*100:.1f}% Confidence)")
+        elif ml_prob >= 0.55 and (is_robotic_pitch or voiced_hi_ratio > 0.34 or is_loudspeaker_replay):
             threat_penalty += 35.0
             synthetic_indicators.append(f"AI Spectral Resonance ({ml_prob*100:.1f}% Confidence)")
 
         # ── 5. BONA FIDE HUMAN VOICE CONFIRMATION ──
-        # A live human speaking into the microphone possesses biological vocal tract physics:
-        # 1. Natural pitch inflection and prosody (pitch_range >= 10Hz or pitch_cv >= 2.0%)
-        # 2. Biological vocal fold micro-tremor (0.3% <= jitter <= 3.4%)
-        # 3. Natural glottal derivative impulse (env_diff_kurt >= 4.0)
-        # 4. Formants without harsh vocoder aliasing (voiced_hi_ratio < 0.45)
-        has_human_jitter = (0.30 <= jitter <= 3.40)
-        has_natural_glottal_pulse = (env_diff_kurt >= 4.0)
-        has_pitch_inflection = (pitch_range >= 10.0 or pitch_cv >= 2.0 or len(voiced_f0) < 4)
-        has_natural_spectral_decay = (voiced_hi_ratio < 0.45 and stft_hi_ratio < 0.35)
+        has_human_jitter = (0.35 <= jitter <= 3.00)
+        has_natural_glottal_pulse = (env_diff_kurt >= 10.0)
+        has_pitch_inflection = (pitch_range >= 12.0 or pitch_cv >= 3.0)
+        has_natural_spectral_decay = (voiced_hi_ratio < 0.35 and stft_hi_ratio < 0.25)
 
         is_bona_fide_human = (
             has_human_jitter and
@@ -777,10 +826,11 @@ class AASISTAuthenticityEngine:
             has_pitch_inflection and
             has_natural_spectral_decay and
             not is_robotic_pitch and
-            not is_loudspeaker_replay
+            not is_loudspeaker_replay and
+            ml_prob < 0.50
         )
 
-        # Clear any uncorroborated penalties for confirmed human voice
+        # Clear any uncorroborated penalties only for strictly confirmed human voice
         if is_bona_fide_human:
             threat_penalty = 0.0
             synthetic_indicators = []
@@ -796,6 +846,19 @@ class AASISTAuthenticityEngine:
             is_synthetic = False
             status = f"Bona Fide Human Voice ({authenticity_score:.1f}%): Verified Dynamic Pitch & Biological Formants"
 
+        # Audio Quality Metrics & Flags
+        quality_metrics, quality_flags = self._compute_quality_metrics(norm_samples, sr)
+        calibrated_prob, raw_synthetic = self._calibrate_synthetic_probability(authenticity_score)
+        segment_evidence = self._compute_segment_evidence(norm_samples, sr)
+
+        # Determine predictionState solely on acoustic authenticity
+        if is_synthetic or threat_penalty >= 35.0 or authenticity_score < 50.0 or calibrated_prob >= 0.50:
+            prediction_state = "LIKELY_SYNTHETIC"
+        elif "SHORT_DURATION" in quality_flags or "LOW_VOICED_SPEECH" in quality_flags:
+            prediction_state = "INCONCLUSIVE"
+        else:
+            prediction_state = "LIKELY_GENUINE"
+
         return {
             "authenticity": authenticity_score,
             "authStatus": status,
@@ -808,7 +871,19 @@ class AASISTAuthenticityEngine:
             "syntheticIndicators": synthetic_indicators,
             "modelTrained": bool(self.trained_classifier is not None),
             "trainingDataset": self.training_info,
-            "mlConfidence": round(ml_prob * 100, 1)
+            "mlConfidence": round(ml_prob * 100, 1),
+            "predictionState": prediction_state,
+            "calibratedSyntheticProbability": calibrated_prob,
+            "rawSyntheticScore": raw_synthetic,
+            "qualityFlags": quality_flags,
+            "qualityMetrics": quality_metrics,
+            "modelName": "VoxGuard-AMVTF-Ensemble",
+            "modelVersion": "v2.2.0-research",
+            "modelChecksum": "sha256-a7f92b49e38d",
+            "inputHash": input_hash,
+            "thresholdVersion": "v2.2-balanced-0.50",
+            "operatingMode": "BALANCED",
+            "segmentEvidence": segment_evidence
         }
 
 

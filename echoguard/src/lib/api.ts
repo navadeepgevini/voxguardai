@@ -171,6 +171,25 @@ export interface AudioAnalysisResponse {
   kurtosis?: number;
   syntheticIndicators?: string[];
   spectrogram?: SpectrogramEvidence;
+  predictionState?: "LIKELY_GENUINE" | "LIKELY_SYNTHETIC" | "INCONCLUSIVE" | "ANALYSIS_FAILED" | "MODEL_UNAVAILABLE" | "DEMO_REPLAY";
+  calibratedSyntheticProbability?: number;
+  rawSyntheticScore?: number;
+  qualityFlags?: string[];
+  qualityMetrics?: Record<string, number>;
+  modelName?: string;
+  modelVersion?: string;
+  modelChecksum?: string;
+  inputHash?: string;
+  thresholdVersion?: string;
+  operatingMode?: string;
+  segmentEvidence?: Array<{
+    segment_index: number;
+    time_start_sec: number;
+    time_end_sec: number;
+    rms_energy?: number;
+    zcr?: number;
+    voiced_speech?: boolean;
+  }>;
 }
 
 // ─── API CLIENT FUNCTIONS ───
