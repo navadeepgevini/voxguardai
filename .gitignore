@@ -103,3 +103,17 @@ desktop.ini
 .vscode/
 *.swp
 *.swo
+
+# --- Development Tooling, Browser Profiles & Tool Caches ---
+.chrome-profile/
+chrome-profile/
+*.trace
+lighthouse-report*
+.context7/
+.dbhub/
+.serena/
+serena_index/
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
+.codemem/cache/

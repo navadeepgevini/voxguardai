@@ -1,10 +1,11 @@
 # VoxGuard AI — Antigravity Agent Configuration & Repository Harness
 
-This workspace integrates four foundational AI agent architectures:
+This workspace integrates foundational AI agent architectures and specialized developer tooling:
 1. **[ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd)** — High-clarity, action-first, distraction-free execution.
 2. **[affaan-m/ecc](https://github.com/affaan-m/ecc)** — Everything Claude Code production agent harness, testing rigor, and context conservation.
-3. **[msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents)** — 147+ specialized agent personas with tailored VoxGuard SOC subagents.
-4. **[kyrolabs/awesome-agents](https://github.com/kyrolabs/awesome-agents)** — Autonomous agent taxonomy, architectural patterns, and evaluation frameworks.
+3. **[msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents)** — Specialized SOC personas.
+4. **[kyrolabs/awesome-agents](https://github.com/kyrolabs/awesome-agents)** — Autonomous agent taxonomy and evaluation.
+5. **Tooling & MCP Integrations** — Context7, Chrome DevTools, DBHub, Serena, shadcn/ui, Obsidian/Graphify, Emil Kowalski Taste, CodeMem.
 
 ---
 
@@ -25,16 +26,28 @@ This workspace integrates four foundational AI agent architectures:
 
 ---
 
-## 3. Agency Agent Personas
-Specialized personas available in `.agents/subagents/`:
+## 3. Specialized Workspace Agents (`.agents/subagents/`)
+
+### Core SOC Personas
 - `sec-analyst`: SOC Deepfake & Audio Biometric Incident Responder
 - `audio-ml-engineer`: Audio Signal Processing, AASIST/ECAPA-TDNN & Spectrogram Forensics Specialist
 - `fullstack-dev`: Next.js 16 (App Router) + FastAPI Architecture Specialist
 - `qa-auditor`: Evidence Verification & Audio Pipeline Compliance Auditor
 
+### Development Tooling Agents
+- `context7-researcher`: Documentation Research Agent (Context7)
+- `browser-debugger`: Browser Debug and QA Agent (Chrome DevTools MCP)
+- `db-agent`: Database and Migration Agent (DBHub)
+- `code-intel`: Code Intelligence and Refactoring Agent (Serena)
+- `shadcn-ui-agent`: UI Component and Accessibility Agent (shadcn/ui base-nova)
+- `knowledge-graph`: Knowledge Graph and Documentation Agent (Graphify + Obsidian)
+- `ui-quality-auditor`: UI Quality Agent (Taste & Emil Kowalski Principles)
+- `codemem-agent`: Persistent Project Memory Agent (CodeMem in `.agents/memory/`)
+
 ---
 
-## 4. Awesome Agents Architectural Patterns
-- **Dual Pipeline Separation**: Local Web Audio Hann FFT (client preview) vs. Backend Librosa STFT (forensic evidence).
-- **Incident Escalation**: Real-time evaluation triggering Resend automated security notifications upon deepfake confirmation.
-- **Audit Trails**: Complete cryptographic and metadata logging for every ingested audio frame in SQLite `calls` table.
+## 4. MCP Servers (`.agents/mcp_config.json`)
+- `chrome-devtools-mcp`: Remote browser debugging on port 9222.
+- `dbhub`: Safe read-only SQLite schema inspection (`backend/voxguard.db`).
+- `context7`: Live documentation retrieval via `https://mcp.context7.com/mcp`.
+- `serena`: LSP-backed semantic code intelligence (`oraios/serena`).
