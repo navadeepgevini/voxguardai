@@ -113,7 +113,8 @@ class ECAPATDNNIdentityEngine:
     def verify_speaker(
         self,
         live_audio: Optional[bytes] = None,
-        target_profile_id: Optional[str] = None
+        target_profile_id: Optional[str] = None,
+        threshold: Optional[float] = None
     ) -> Dict[str, Any]:
         """
         Verifies live speaker against registered voiceprints in SQLite database.
@@ -179,13 +180,14 @@ class ECAPATDNNIdentityEngine:
                 "similarityScore": 0.0
             }
 
-        is_match = best_similarity >= self.threshold
+        effective_threshold = float(threshold) if threshold is not None else self.threshold
+        is_match = best_similarity >= effective_threshold
         profile_label = f"{best_match_profile['name']} ({best_match_profile['id']})"
 
         if is_match:
-            status = f"Verified Match: {best_match_profile['name']} ({best_similarity:.1f}%)"
+            status = f"Verified Match: {best_match_profile['name']} ({best_similarity:.1f}% >= {effective_threshold:.0f}% threshold)"
         else:
-            status = f"Voiceprint Mismatch ({best_similarity:.1f}% vs {self.threshold:.0f}% threshold)"
+            status = f"Voiceprint Mismatch ({best_similarity:.1f}% vs {effective_threshold:.0f}% threshold)"
 
         return {
             "identity": best_similarity,

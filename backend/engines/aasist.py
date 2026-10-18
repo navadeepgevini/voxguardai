@@ -236,12 +236,19 @@ class AASISTAuthenticityEngine:
 
         return np.array([], dtype=np.float32), 16000
 
-    def analyze_audio(self, audio_data: bytes = None) -> Dict[str, Any]:
+    def analyze_audio(self, audio_data: bytes = None, threshold: float = 50.0) -> Dict[str, Any]:
         """
         Analyzes an uploaded audio file (.wav, .mp3, .ogg, .flac, .mp4, .m4a)
         using full-duration spectro-temporal feature extraction.
-        Calibrated specifically for pre-recorded audio file analysis.
+        Calibrated specifically for pre-recorded audio file analysis with dynamic SOC thresholding.
         """
+        op_mode = "BALANCED"
+        if threshold <= 35.0:
+            op_mode = "LOW_FALSE_POSITIVE"
+        elif threshold >= 70.0:
+            op_mode = "HIGH_RECALL_SECURITY"
+        threshold_ver = f"v2.2-custom-tau{(100.0 - threshold) / 100.0:.2f}" if threshold != 50.0 else "v2.2-balanced-0.50"
+
         if not audio_data or len(audio_data) < 10:
             return {
                 "authenticity": 50.0,
@@ -268,8 +275,8 @@ class AASISTAuthenticityEngine:
                 "modelVersion": "v2.2.0-research",
                 "modelChecksum": "sha256-a7f92b49e38d",
                 "inputHash": None,
-                "thresholdVersion": "v2.2-balanced-0.50",
-                "operatingMode": "BALANCED",
+                "thresholdVersion": threshold_ver,
+                "operatingMode": op_mode,
                 "segmentEvidence": []
             }
 
@@ -299,8 +306,8 @@ class AASISTAuthenticityEngine:
                 "modelVersion": "v2.2.0-research",
                 "modelChecksum": "sha256-a7f92b49e38d",
                 "inputHash": input_hash,
-                "thresholdVersion": "v2.2-balanced-0.50",
-                "operatingMode": "BALANCED",
+                "thresholdVersion": threshold_ver,
+                "operatingMode": op_mode,
                 "segmentEvidence": []
             }
 
@@ -468,6 +475,13 @@ class AASISTAuthenticityEngine:
             is_synthetic = False
             status = f"Bona Fide Human Voice ({authenticity_score:.1f}%): Verified Formants & Physiological Tremor"
 
+        # Enforce user-configured threshold policy: if authenticity falls below threshold, flag as synthetic risk
+        if authenticity_score < threshold:
+            is_synthetic = True
+            if not any("threshold" in s.lower() for s in synthetic_indicators):
+                synthetic_indicators.append(f"Authenticity ({authenticity_score:.1f}%) below configured safety threshold ({threshold:.0f}%)")
+            status = f"AUTHENTICITY SUB-THRESHOLD ({authenticity_score:.1f}% < {threshold:.0f}%): Flagged by SOC Security Policy"
+
         # Spectral entropy
         full_psd = (full_fft ** 2) + 1e-12
         full_psd_prob = full_psd / np.sum(full_psd)
@@ -480,11 +494,12 @@ class AASISTAuthenticityEngine:
         segment_evidence = self._compute_segment_evidence(norm_samples, sr)
 
         # Determine predictionState solely on acoustic authenticity and signal quality (never on identity/context)
+        effective_synth_threshold = (100.0 - threshold) / 100.0
         if "SHORT_DURATION" in quality_flags or "LOW_VOICED_SPEECH" in quality_flags or "EMPTY_PAYLOAD" in quality_flags:
             prediction_state = "INCONCLUSIVE"
         elif 0.40 <= calibrated_prob <= 0.59 and ("LOW_SNR" in quality_flags or "HIGH_SILENCE" in quality_flags or "EXCESSIVE_CLIPPING" in quality_flags):
             prediction_state = "INCONCLUSIVE"
-        elif calibrated_prob >= 0.50:
+        elif calibrated_prob >= effective_synth_threshold or authenticity_score < threshold or is_synthetic:
             prediction_state = "LIKELY_SYNTHETIC"
         else:
             prediction_state = "LIKELY_GENUINE"
@@ -508,12 +523,12 @@ class AASISTAuthenticityEngine:
             "modelVersion": "v2.2.0-research",
             "modelChecksum": "sha256-a7f92b49e38d",
             "inputHash": input_hash,
-            "thresholdVersion": "v2.2-balanced-0.50",
-            "operatingMode": "BALANCED",
+            "thresholdVersion": threshold_ver,
+            "operatingMode": op_mode,
             "segmentEvidence": segment_evidence
         }
 
-    def analyze_live_chunk(self, audio_data: bytes = None) -> Dict[str, Any]:
+    def analyze_live_chunk(self, audio_data: bytes = None, threshold: float = 50.0) -> Dict[str, Any]:
         """
         Specifically analyzes streaming live microphone PCM slices (typically 1.8-second chunks).
         Scientifically distinguishes human voice from AI synthetic speech:
@@ -524,6 +539,13 @@ class AASISTAuthenticityEngine:
         3. Formant & Vocoder Harmonics: Evaluated strictly on periodic voiced vowels with strong
            mid-frequency resonance, ignoring unvoiced consonants, room noise, and trailing breath.
         """
+        op_mode = "BALANCED"
+        if threshold <= 35.0:
+            op_mode = "LOW_FALSE_POSITIVE"
+        elif threshold >= 70.0:
+            op_mode = "HIGH_RECALL_SECURITY"
+        threshold_ver = f"v2.2-custom-tau{(100.0 - threshold) / 100.0:.2f}" if threshold != 50.0 else "v2.2-balanced-0.50"
+
         if not audio_data or len(audio_data) < 10:
             return {
                 "authenticity": 92.0,
@@ -546,8 +568,8 @@ class AASISTAuthenticityEngine:
                 "modelVersion": "v2.2.0-research",
                 "modelChecksum": "sha256-a7f92b49e38d",
                 "inputHash": None,
-                "thresholdVersion": "v2.2-balanced-0.50",
-                "operatingMode": "BALANCED",
+                "thresholdVersion": threshold_ver,
+                "operatingMode": op_mode,
                 "segmentEvidence": []
             }
 
@@ -846,13 +868,21 @@ class AASISTAuthenticityEngine:
             is_synthetic = False
             status = f"Bona Fide Human Voice ({authenticity_score:.1f}%): Verified Dynamic Pitch & Biological Formants"
 
+        # Apply user-configured threshold policy:
+        if authenticity_score < threshold:
+            is_synthetic = True
+            if not any("threshold" in s.lower() for s in synthetic_indicators):
+                synthetic_indicators.append(f"Authenticity ({authenticity_score:.1f}%) below configured safety threshold ({threshold:.0f}%)")
+            status = f"AUTHENTICITY SUB-THRESHOLD ({authenticity_score:.1f}% < {threshold:.0f}%): Flagged by SOC Security Policy"
+
         # Audio Quality Metrics & Flags
         quality_metrics, quality_flags = self._compute_quality_metrics(norm_samples, sr)
         calibrated_prob, raw_synthetic = self._calibrate_synthetic_probability(authenticity_score)
         segment_evidence = self._compute_segment_evidence(norm_samples, sr)
 
         # Determine predictionState solely on acoustic authenticity
-        if is_synthetic or threat_penalty >= 35.0 or authenticity_score < 50.0 or calibrated_prob >= 0.50:
+        effective_synth_threshold = (100.0 - threshold) / 100.0
+        if is_synthetic or threat_penalty >= 35.0 or authenticity_score < threshold or calibrated_prob >= effective_synth_threshold:
             prediction_state = "LIKELY_SYNTHETIC"
         elif "SHORT_DURATION" in quality_flags or "LOW_VOICED_SPEECH" in quality_flags:
             prediction_state = "INCONCLUSIVE"
@@ -881,8 +911,8 @@ class AASISTAuthenticityEngine:
             "modelVersion": "v2.2.0-research",
             "modelChecksum": "sha256-a7f92b49e38d",
             "inputHash": input_hash,
-            "thresholdVersion": "v2.2-balanced-0.50",
-            "operatingMode": "BALANCED",
+            "thresholdVersion": threshold_ver,
+            "operatingMode": op_mode,
             "segmentEvidence": segment_evidence
         }
 

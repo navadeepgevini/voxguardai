@@ -48,6 +48,8 @@ import {
   getIdentities,
   VoiceProfile,
   AudioAnalysisResponse,
+  getSettings,
+  SystemSettings,
 } from "@/lib/api";
 import { AudioPreviewSpectrogram } from "@/components/AudioPreviewSpectrogram";
 
@@ -117,6 +119,7 @@ export default function HybridDashboard() {
   // Registered database profiles
   const [enrolledProfiles, setEnrolledProfiles] = useState<VoiceProfile[]>([]);
   const [selectedTargetId, setSelectedTargetId] = useState<string>("");
+  const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
 
   // Custom text input for threat testing
   const [customTranscript, setCustomTranscript] = useState("");
@@ -333,17 +336,21 @@ export default function HybridDashboard() {
     }
   };
 
-  // Load real registered voiceprints from SQLite
+  // Load real registered voiceprints and active SOC settings from SQLite
   useEffect(() => {
-    async function loadProfiles() {
+    async function loadInitialData() {
       try {
-        const data = await getIdentities();
-        setEnrolledProfiles(data);
+        const [profiles, settings] = await Promise.all([
+          getIdentities().catch(() => []),
+          getSettings().catch(() => null),
+        ]);
+        if (profiles) setEnrolledProfiles(profiles);
+        if (settings) setSystemSettings(settings);
       } catch (err) {
-        console.error("Failed to load registered identities:", err);
+        console.error("Failed to load initial SOC data:", err);
       }
     }
-    loadProfiles();
+    loadInitialData();
   }, []);
 
   // Call duration timer
@@ -1868,32 +1875,37 @@ export default function HybridDashboard() {
                 <p className="text-xs text-gray-500 mt-0.5">Real-time fusion across 3 defense layers</p>
               </div>
 
-              {/* Layer 1: AASIST Authenticity */}
+              {/* Layer 1: AASIST Audio Authenticity */}
               <div>
                 <div className="flex justify-between items-end mb-1.5">
                   <div>
                     <p className="text-xs font-bold text-gray-900">Layer 1: AASIST Authenticity (40%)</p>
-                    <p className="text-[10px] text-gray-500">Audio Anti-Spoofing & Vocoder Detection</p>
+                    <p className="text-[10px] text-gray-500">Audio Anti-Spoofing & Vocoder Detection (Min: {systemSettings?.aasistThreshold ?? 50}%)</p>
                   </div>
                   <span className="text-sm font-bold font-mono text-gray-900">
                     {currentScenario ? `${currentScenario.authenticity}%` : "--"}
                   </span>
                 </div>
-                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-200 relative">
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-700",
                       !currentScenario
                         ? "w-0"
-                        : currentScenario.authenticity > 50
+                        : currentScenario.authenticity >= (systemSettings?.aasistThreshold ?? 50)
                         ? "bg-emerald-500"
                         : "bg-red-500"
                     )}
                     style={{ width: currentScenario ? `${currentScenario.authenticity}%` : "0%" }}
                   />
+                  <div
+                    className="absolute top-0 bottom-0 w-0.5 bg-gray-500 z-10"
+                    style={{ left: `${systemSettings?.aasistThreshold ?? 50}%` }}
+                    title={`AASIST Threshold: ${systemSettings?.aasistThreshold ?? 50}%`}
+                  />
                 </div>
                 <div className="flex justify-between items-center mt-1 text-[10px] text-gray-500">
-                  <span>Threshold: &gt;50% Human</span>
+                  <span>Threshold: &gt;{systemSettings?.aasistThreshold ?? 50}% Human</span>
                   <span className="font-semibold text-gray-800">
                     {currentScenario?.authStatus || "Awaiting Stream"}
                   </span>
@@ -1905,7 +1917,7 @@ export default function HybridDashboard() {
                 <div className="flex justify-between items-end mb-1.5">
                   <div>
                     <p className="text-xs font-bold text-gray-900">Layer 2: ECAPA-TDNN Identity (35%)</p>
-                    <p className="text-[10px] text-gray-500">192-Dim Cosine Match vs Enrolled Profiles</p>
+                    <p className="text-[10px] text-gray-500">192-Dim Cosine Match vs Enrolled Profiles (Min: {systemSettings?.ecapaThreshold ?? 70}%)</p>
                   </div>
                   <span className="text-sm font-bold font-mono text-gray-900">
                     {currentScenario ? `${currentScenario.identity}%` : "--"}
@@ -1917,16 +1929,16 @@ export default function HybridDashboard() {
                       "h-full rounded-full transition-all duration-700",
                       !currentScenario
                         ? "w-0"
-                        : currentScenario.identity > 70
+                        : currentScenario.identity >= (systemSettings?.ecapaThreshold ?? 70)
                         ? "bg-emerald-500"
                         : "bg-amber-500"
                     )}
                     style={{ width: currentScenario ? `${currentScenario.identity}%` : "0%" }}
                   />
                   <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-gray-500"
-                    style={{ left: "70%" }}
-                    title="Threshold 70%"
+                    className="absolute top-0 bottom-0 w-0.5 bg-gray-500 z-10"
+                    style={{ left: `${systemSettings?.ecapaThreshold ?? 70}%` }}
+                    title={`ECAPA Threshold: ${systemSettings?.ecapaThreshold ?? 70}%`}
                   />
                 </div>
                 <div className="flex justify-between items-center mt-1 text-[10px] text-gray-500">
@@ -1942,7 +1954,7 @@ export default function HybridDashboard() {
                 <div className="flex justify-between items-end mb-1.5">
                   <div>
                     <p className="text-xs font-bold text-gray-900">Layer 3: Context Risk (25%)</p>
-                    <p className="text-[10px] text-gray-500">DistilBERT Intent & Social Engineering Risk</p>
+                    <p className="text-[10px] text-gray-500">DistilBERT Intent & Social Engineering Risk (Sens: {systemSettings?.nlpSensitivity ?? 65}%)</p>
                   </div>
                   <span className="text-sm font-bold font-mono text-gray-900">
                     {currentScenario ? `${currentScenario.contextRisk}%` : "--"}

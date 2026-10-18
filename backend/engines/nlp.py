@@ -233,12 +233,14 @@ class ContextualThreatEngine:
 
         return ""
 
-    def analyze_text(self, text: str = "") -> Dict[str, Any]:
+    def analyze_text(self, text: str = "", sensitivity: Optional[float] = None) -> Dict[str, Any]:
         """
         Dynamically evaluates text/transcript for security threat indicators.
-        Returns risk score (0 - 100), detected keywords, semantic flags,
-        and intent classification.
+        Accepts dynamic sensitivity threshold (20 - 100, default 65) to modulate
+        fraud detection sensitivity according to user SOC settings.
         """
+        eff_sensitivity = float(sensitivity) if sensitivity is not None else float(self.sensitivity)
+
         if not text or not text.strip():
             return {
                 "contextRisk": 5.0,
@@ -246,6 +248,7 @@ class ContextualThreatEngine:
                 "threatKeywords": [],
                 "semanticFlags": ["Standard operational baseline"],
                 "contextTitle": "Operational Communications Baseline",
+                "effectiveSensitivity": eff_sensitivity
             }
 
         text_lower = text.lower()
@@ -277,18 +280,26 @@ class ContextualThreatEngine:
             score += 15.0
             flags.append(f"Multi-vector attack pattern ({active_categories} categories)")
 
-        # ── Determine intent classification ──
+        # ── Determine intent classification with dynamic sensitivity scaling ──
         if not flagged_keywords:
             score = 8.0
             flags = ["Standard operational tone", "Procedural compliance"]
             intent = "Benign Business Communication"
             context_title = "Routine Operational Conversation"
         else:
-            score = float(min(100.0, score + 10.0))
-            if score >= 70.0:
+            # Scale score by user-configured sensitivity relative to 65.0 baseline
+            sens_multiplier = eff_sensitivity / 65.0
+            score = float(min(100.0, max(5.0, (score + 10.0) * sens_multiplier)))
+            flags.append(f"NLP Threat Engine: {eff_sensitivity:.0f}% sensitivity applied")
+
+            # Dynamic escalation thresholds based on sensitivity
+            crit_threshold = max(45.0, 70.0 / sens_multiplier)
+            warn_threshold = max(25.0, 38.0 / sens_multiplier)
+
+            if score >= crit_threshold:
                 intent = "CRITICAL — Active Fraud / Social Engineering Attack"
                 context_title = "High-Risk Fraud & Coercion Detected"
-            elif score >= 38.0:
+            elif score >= warn_threshold:
                 intent = "WARNING — Suspicious Scam / Procedural Deviation"
                 context_title = "Elevated Fraud Indicators Detected"
             else:
@@ -301,6 +312,7 @@ class ContextualThreatEngine:
             "threatKeywords": flagged_keywords,
             "semanticFlags": flags,
             "contextTitle": context_title,
+            "effectiveSensitivity": eff_sensitivity
         }
 
 

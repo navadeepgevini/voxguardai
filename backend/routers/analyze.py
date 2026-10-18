@@ -9,6 +9,7 @@ from engines.nlp import nlp_engine
 from engines.amvtf import amvtf_engine
 from engines.spectrogram import spectrogram_engine
 from models import AudioAnalysisResponse, TranscriptMessage
+from routers.settings import get_settings
 
 router = APIRouter(prefix="/api/analyze", tags=["Analysis"])
 
@@ -30,17 +31,23 @@ async def analyze_audio_upload(
 ):
     """
     Analyzes an uploaded raw audio file (.wav, .mp3, .ogg, .flac) or recorded audio blob
-    through the genuine multi-signal AMVTF pipeline.
+    through the genuine multi-signal AMVTF pipeline with active user-configured SOC thresholds.
     """
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="Empty audio file provided.")
 
-    # 1. Real AASIST physical audio feature extraction
-    auth_res = aasist_engine.analyze_audio(audio_data=content)
+    # 0. Retrieve real user SOC settings (thresholds & sensitivities)
+    current_settings = get_settings()
+    aasist_th = float(current_settings.aasistThreshold)
+    ecapa_th = float(current_settings.ecapaThreshold)
+    nlp_sens = float(current_settings.nlpSensitivity)
 
-    # 2. Real ECAPA-TDNN speaker verification against actual SQLite database voiceprints
-    id_res = ecapa_engine.verify_speaker(live_audio=content, target_profile_id=target_profile_id)
+    # 1. Real AASIST physical audio feature extraction with user SOC threshold
+    auth_res = aasist_engine.analyze_audio(audio_data=content, threshold=aasist_th)
+
+    # 2. Real ECAPA-TDNN speaker verification with user SOC threshold
+    id_res = ecapa_engine.verify_speaker(live_audio=content, target_profile_id=target_profile_id, threshold=ecapa_th)
 
     # 3. Transcribe audio to extract real spoken words from uploaded file
     extracted_text = transcript.strip() if transcript and transcript.strip() else ""
@@ -53,16 +60,19 @@ async def analyze_audio_upload(
                 extracted_text = audio_transcript
 
     eval_text = extracted_text if extracted_text else f"Audio recording analysis: {file.filename}"
-    nlp_res = nlp_engine.analyze_text(text=eval_text)
+    nlp_res = nlp_engine.analyze_text(text=eval_text, sensitivity=nlp_sens)
 
-    # 4. AMVTF Adaptive Multi-Signal Fusion
+    # 4. AMVTF Adaptive Multi-Signal Fusion with active dynamic thresholds
     fusion_res = amvtf_engine.fuse_signals(
         authenticity=auth_res["authenticity"],
         identity=id_res["identity"],
         context_risk=nlp_res["contextRisk"],
         matched_profile=id_res["matchedProfile"],
         is_identity_match=id_res["isMatch"],
-        target_profile_requested=bool(target_profile_id)
+        target_profile_requested=bool(target_profile_id),
+        aasist_threshold=aasist_th,
+        ecapa_threshold=ecapa_th,
+        nlp_sensitivity=nlp_sens
     )
 
     caller_label = caller_name or f"Intake: {file.filename}"
@@ -155,10 +165,16 @@ async def analyze_live_mic(
     """
     audio_bytes = await audio.read() if audio else None
 
-    # 1. Real AASIST Analysis & ECAPA Identity
+    # 0. Retrieve real user SOC settings (thresholds & sensitivities)
+    current_settings = get_settings()
+    aasist_th = float(current_settings.aasistThreshold)
+    ecapa_th = float(current_settings.ecapaThreshold)
+    nlp_sens = float(current_settings.nlpSensitivity)
+
+    # 1. Real AASIST Analysis & ECAPA Identity with user SOC thresholds
     if audio_bytes and len(audio_bytes) >= 16:
-        auth_res = aasist_engine.analyze_live_chunk(audio_data=audio_bytes)
-        id_res = ecapa_engine.verify_speaker(live_audio=audio_bytes, target_profile_id=target_profile_id)
+        auth_res = aasist_engine.analyze_live_chunk(audio_data=audio_bytes, threshold=aasist_th)
+        id_res = ecapa_engine.verify_speaker(live_audio=audio_bytes, target_profile_id=target_profile_id, threshold=ecapa_th)
     else:
         auth_res = {
             "authenticity": 90.0,
@@ -191,16 +207,19 @@ async def analyze_live_mic(
         except Exception as e:
             print(f"[LIVE ASR FALLBACK] {e}")
 
-    nlp_res = nlp_engine.analyze_text(text=extracted_text)
+    nlp_res = nlp_engine.analyze_text(text=extracted_text, sensitivity=nlp_sens)
 
-    # 4. AMVTF Fusion
+    # 4. AMVTF Fusion with active dynamic thresholds
     fusion_res = amvtf_engine.fuse_signals(
         authenticity=auth_res["authenticity"],
         identity=id_res["identity"],
         context_risk=nlp_res["contextRisk"],
         matched_profile=id_res["matchedProfile"],
         is_identity_match=id_res["isMatch"],
-        target_profile_requested=bool(target_profile_id)
+        target_profile_requested=bool(target_profile_id),
+        aasist_threshold=aasist_th,
+        ecapa_threshold=ecapa_th,
+        nlp_sensitivity=nlp_sens
     )
 
     now_str = datetime.datetime.now().strftime("%H:%M:%S")
