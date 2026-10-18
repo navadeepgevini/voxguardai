@@ -1,0 +1,14 @@
+{
+  "split": "LOCKED_TEST",
+  "total_speakers": 60,
+  "speaker_ids": [
+    "SPK-ASV19-LA-TEST-001", "SPK-ASV19-LA-TEST-002", "SPK-ASV19-LA-TEST-003",
+    "SPK-ASV21-DF-TEST-001", "SPK-ASV21-DF-TEST-002",
+    "SPK-FLEURS-TEST-001", "SPK-FLEURS-TEST-002",
+    "SPK-MINDS14-TEST-001", "SPK-MINDS14-TEST-002",
+    "SPK-OPERATOR-TEST-CONSENT-01"
+  ],
+  "generators_included": [
+    "ASVspoof_A01_Neural", "ASVspoof_A02_WaveNet", "ElevenLabs_Multilingual_v2", "OpenAI_Whisper_TTS"
+  ]
+}

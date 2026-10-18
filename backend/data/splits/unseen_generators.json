@@ -1,0 +1,34 @@
+{
+  "split": "OPEN_WORLD_UNSEEN_GENERATORS",
+  "total_generators": 4,
+  "generator_families": [
+    {
+      "name": "Tortoise-TTS",
+      "architecture": "Autoregressive Multi-Voice Transformer + Diffusion Decoders",
+      "sample_rate": 24000,
+      "in_training_set": false,
+      "purpose": "Evaluate zero-shot unseen autoregressive voice synthesis detection"
+    },
+    {
+      "name": "Bark (Suno)",
+      "architecture": "GPT-style Generative Audio Model (Text-to-Audio Tokens)",
+      "sample_rate": 24000,
+      "in_training_set": false,
+      "purpose": "Evaluate zero-shot speech with non-speech acoustics (laughter, sighs, hesitations)"
+    },
+    {
+      "name": "StyleTTS-2",
+      "architecture": "Style Diffusion + Differentiable Duration Model",
+      "sample_rate": 24000,
+      "in_training_set": false,
+      "purpose": "Evaluate expressive human-like intonation without pitch rigidity"
+    },
+    {
+      "name": "VALL-E Zero-Shot",
+      "architecture": "Neural Codec Language Model (EnCodec Quantized Tokens)",
+      "sample_rate": 24000,
+      "in_training_set": false,
+      "purpose": "Evaluate acoustic prompt conditioning without classical vocoder spectrograms"
+    }
+  ]
+}

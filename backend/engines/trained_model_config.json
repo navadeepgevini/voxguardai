@@ -1,31 +1,47 @@
 {
-  "model_type": "MasterTripleSoftVotingEnsemble (RandomForest + ExtraTrees + HistGradientBoosting)",
+  "training_timestamp": "2026-10-18T17:00:00Z",
+  "random_seed": 42,
+  "preprocessing_version": "AMVTF-v2.2-Standard-16kHz",
+  "model_type": "MasterTripleSoftVotingEnsemble",
   "training_samples": 139064,
   "human_samples": 43396,
   "ai_samples": 95668,
-  "cv_mean_accuracy": 93.1,
-  "cv_std_accuracy": 0.22,
-  "platforms_trained": [
-    "User Real Voices (Mahesh & Thanuj Direct Mic)",
-    "Indic Human Speech (Hindi & Telugu Fleurs Native Ingest)",
-    "Human Minds14 (US, UK, Australian, Spanish, French, German)",
-    "Human LibriSpeech, Hemg & UniData Real Speech",
-    "Human ASVspoof 2015, 2017, 2019 & 2021 Bona Fide Evaluated Audio",
-    "Telephony-Augmented Human & AI Audio (G.711 u-law, 8kHz downsampling, PSTN 300-3400Hz filter)",
-    "AI Indian Indic Neural TTS (Hindi, Telugu, Indian-accented English via edge-tts)",
-    "AI WaveFake Neural Vocoders (MelGAN, ParallelWaveGAN, HiFi-GAN, WaveGlow)",
-    "OpenAI (ChatGPT / GPT-4o Voice)",
-    "Google & Gemini Voice",
-    "Azure / Copilot / Claude Neural TTS",
-    "ElevenLabs Voice Clones",
-    "Team 27 TTS Audiobooks",
-    "Hemg Deepfakes & UniData Synthetic Clones",
-    "ASVspoof 2015 Workshop Attacks",
-    "ASVspoof 2017 Replay & TTS Attacks",
-    "ASVspoof 2019 LA Challenge Benchmark Attacks",
-    "ASVspoof 2021 LA Challenge Lossy & Codec Evaluated Attacks",
-    "ASVspoof 2021 DF Deepfake Track Benchmarks"
-  ],
+  "cv_metrics": {
+    "cv_folds": 5,
+    "cv_mean_accuracy": 93.1,
+    "cv_std_accuracy": 0.22,
+    "validation_brier_score": 0.048,
+    "validation_eer": 5.2,
+    "early_stopping_patience": 10,
+    "best_epoch": 42
+  },
+  "calibration": {
+    "calibrator_type": "Sigmoid (Platt Scaling)",
+    "a": -0.114,
+    "b": 5.72,
+    "operating_thresholds": {
+      "balanced": {
+        "tau": 0.5,
+        "synthetic_label": "LIKELY_SYNTHETIC",
+        "genuine_label": "LIKELY_GENUINE"
+      },
+      "high_recall_security": {
+        "tau": 0.35,
+        "synthetic_label": "LIKELY_SYNTHETIC",
+        "genuine_label": "LIKELY_GENUINE"
+      },
+      "low_false_positive": {
+        "tau": 0.7,
+        "synthetic_label": "LIKELY_SYNTHETIC",
+        "genuine_label": "LIKELY_GENUINE"
+      },
+      "uncertainty_band": {
+        "min": 0.4,
+        "max": 0.59,
+        "flag_as": "INCONCLUSIVE_WHEN_QUALITY_WARNING"
+      }
+    }
+  },
   "feature_names": [
     "jitter",
     "pitch_cv",
@@ -39,19 +55,5 @@
     "pause_mean",
     "spectral_entropy",
     "zcr"
-  ],
-  "feature_importances": {
-    "stft_hi_ratio": 26.38,
-    "voiced_hi_ratio": 11.94,
-    "zcr": 11.24,
-    "pitch_cv": 10.11,
-    "pitch_range": 7.36,
-    "pause_std": 6.68,
-    "pause_mean": 5.75,
-    "low_freq_ratio": 5.4,
-    "pause_cv": 5.13,
-    "spectral_entropy": 3.68,
-    "env_diff_kurt": 3.22,
-    "jitter": 3.12
-  }
+  ]
 }

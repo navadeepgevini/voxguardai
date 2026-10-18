@@ -1,0 +1,14 @@
+{
+  "split": "VALIDATION",
+  "total_speakers": 60,
+  "speaker_ids": [
+    "SPK-ASV19-LA-VAL-001", "SPK-ASV19-LA-VAL-002", "SPK-ASV19-LA-VAL-003",
+    "SPK-ASV21-DF-VAL-001", "SPK-ASV21-DF-VAL-002",
+    "SPK-FLEURS-VAL-001", "SPK-FLEURS-VAL-002",
+    "SPK-MINDS14-VAL-001", "SPK-MINDS14-VAL-002",
+    "SPK-OPERATOR-VAL-CONSENT-01"
+  ],
+  "generators_included": [
+    "ASVspoof_A01_Neural", "ASVspoof_A02_WaveNet", "ElevenLabs_Multilingual_v1", "Google_Cloud_Neural2"
+  ]
+}

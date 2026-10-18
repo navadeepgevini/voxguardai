@@ -103,6 +103,25 @@ class AudioAnalysisResponse(BaseModel):
     kurtosis: Optional[float] = None
     syntheticIndicators: List[str] = []
     spectrogram: Optional[SpectrogramEvidence] = None
+    predictionState: Optional[Literal[
+        "LIKELY_GENUINE",
+        "LIKELY_SYNTHETIC",
+        "INCONCLUSIVE",
+        "ANALYSIS_FAILED",
+        "MODEL_UNAVAILABLE",
+        "DEMO_REPLAY"
+    ]] = "LIKELY_GENUINE"
+    calibratedSyntheticProbability: Optional[float] = 0.05
+    rawSyntheticScore: Optional[float] = 0.05
+    qualityFlags: List[str] = []
+    qualityMetrics: Optional[dict] = None
+    modelName: Optional[str] = "VoxGuard-AMVTF-Ensemble"
+    modelVersion: Optional[str] = "v2.2.0-research"
+    modelChecksum: Optional[str] = None
+    inputHash: Optional[str] = None
+    thresholdVersion: Optional[str] = "v2.2-balanced-0.50"
+    operatingMode: Optional[str] = "BALANCED"
+    segmentEvidence: Optional[List[dict]] = None
 
 class UserRegisterRequest(BaseModel):
     username: str

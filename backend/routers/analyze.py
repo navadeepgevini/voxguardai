@@ -128,7 +128,19 @@ async def analyze_audio_upload(
         jitter=auth_res.get("jitter"),
         kurtosis=auth_res.get("kurtosis"),
         syntheticIndicators=auth_res.get("syntheticIndicators", []),
-        spectrogram=spec_evidence
+        spectrogram=spec_evidence,
+        predictionState=auth_res.get("predictionState", "LIKELY_GENUINE"),
+        calibratedSyntheticProbability=auth_res.get("calibratedSyntheticProbability", 0.05),
+        rawSyntheticScore=auth_res.get("rawSyntheticScore", 0.05),
+        qualityFlags=auth_res.get("qualityFlags", []),
+        qualityMetrics=auth_res.get("qualityMetrics"),
+        modelName=auth_res.get("modelName", "VoxGuard-AMVTF-Ensemble"),
+        modelVersion=auth_res.get("modelVersion", "v2.2.0-research"),
+        modelChecksum=auth_res.get("modelChecksum"),
+        inputHash=auth_res.get("inputHash"),
+        thresholdVersion=auth_res.get("thresholdVersion", "v2.2-balanced-0.50"),
+        operatingMode=auth_res.get("operatingMode", "BALANCED"),
+        segmentEvidence=auth_res.get("segmentEvidence")
     )
 
 @router.post("/live", response_model=AudioAnalysisResponse)
@@ -240,5 +252,17 @@ async def analyze_live_mic(
         jitter=auth_res.get("jitter"),
         kurtosis=auth_res.get("kurtosis"),
         syntheticIndicators=auth_res.get("syntheticIndicators", []),
-        spectrogram=spec_evidence
+        spectrogram=spec_evidence,
+        predictionState=auth_res.get("predictionState", "LIKELY_GENUINE"),
+        calibratedSyntheticProbability=auth_res.get("calibratedSyntheticProbability", 0.05),
+        rawSyntheticScore=auth_res.get("rawSyntheticScore", 0.05),
+        qualityFlags=auth_res.get("qualityFlags", []),
+        qualityMetrics=auth_res.get("qualityMetrics"),
+        modelName=auth_res.get("modelName", "VoxGuard-AMVTF-Ensemble"),
+        modelVersion=auth_res.get("modelVersion", "v2.2.0-research"),
+        modelChecksum=auth_res.get("modelChecksum"),
+        inputHash=auth_res.get("inputHash"),
+        thresholdVersion=auth_res.get("thresholdVersion", "v2.2-balanced-0.50"),
+        operatingMode=auth_res.get("operatingMode", "BALANCED"),
+        segmentEvidence=auth_res.get("segmentEvidence")
     )
