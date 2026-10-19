@@ -1,11 +1,19 @@
 # Test Results
 
-## Latest run — 2026-10-18
+## Latest run — 2026-10-20
 
 ```bat
 cd C:\voxguardai\backend
 python -m pytest tests -q --tb=line
 ```
+
+```text
+52 passed, 7 warnings in 8.09s
+```
+
+Aligned `test_antispoof_research` / `test_threshold_responsiveness` to live `detectionState` APIs. Empty upload path now returns `INSUFFICIENT_AUDIO` consistently.
+
+## Prior run — 2026-10-18
 
 ```text
 40 passed, 7 warnings in 5.98s

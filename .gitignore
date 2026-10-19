@@ -104,6 +104,21 @@ desktop.ini
 *.swp
 *.swo
 
+# --- MCP / browser debug / agent tool caches (local only) ---
+.cursor/mcp.json
+.cursor/chrome-profile/
+.cursor/browser-profile/
+**/chrome-debug/
+**/voxguard-chrome-debug/
+.serena/
+.serena-cache/
+.mcp-cache/
+ctx7-cache/
+.agents/memory/private/
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
+
 # --- ML artifacts / local eval audio (keep manifests docs only) ---
 artifacts/
 data/eval/**/*.wav

@@ -1,25 +1,29 @@
 {
   "mcpServers": {
     "chrome-devtools-mcp": {
+      "enabled": true,
       "command": "npx",
-      "args": [
-        "-y",
-        "chrome-devtools-mcp@latest"
-      ],
-      "env": {}
+      "args": ["-y", "chrome-devtools-mcp@latest"],
+      "env": {},
+      "notes": "Requires Chrome remote debugging. Never log cookies/tokens."
     },
     "dbhub": {
+      "enabled": true,
       "command": "npx",
       "args": [
         "-y",
         "@bytebase/dbhub@latest",
         "--dsn",
-        "sqlite://backend/voxguard.db",
+        "${DBHUB_DSN}",
         "--readonly"
       ],
-      "env": {}
+      "env": {
+        "DBHUB_DSN": "${DBHUB_DSN}"
+      },
+      "notes": "Default local DSN example: sqlite:///./backend/voxguard.db — readonly only."
     },
     "context7": {
+      "enabled": true,
       "command": "npx",
       "args": [
         "-y",
@@ -30,9 +34,11 @@
       ],
       "env": {
         "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
-      }
+      },
+      "notes": "Optional. Without CONTEXT7_API_KEY, Documentation Research Agent uses docs/ + web search."
     },
     "serena": {
+      "enabled": true,
       "command": "uvx",
       "args": [
         "--from",
@@ -42,7 +48,9 @@
         "--project",
         "."
       ],
-      "env": {}
+      "env": {},
+      "notes": "Optional. Requires uv. Falls back to Grep/Glob/Read."
     }
-  }
+  },
+  "application_runtime_depends_on_mcp": false
 }

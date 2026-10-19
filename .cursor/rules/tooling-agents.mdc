@@ -1,0 +1,28 @@
+---
+description: Development tooling agents (Context7, DevTools, DBHub, Serena, shadcn, Graphify, UI Quality, CodeMem) with graceful fallbacks
+alwaysApply: true
+---
+
+# Tooling Agents (dev-only)
+
+Before claiming an MCP tool is available, read `.agents/tooling-flags.json` and the live tool catalog.
+
+| Need | Prefer | Fallback |
+|------|--------|----------|
+| Library/API docs | Context7 | `docs/` + WebSearch |
+| Browser QA | Chrome DevTools MCP | Manual DevTools checklist; redact secrets |
+| DB inspect | DBHub readonly / DBCode | `backend/database.py` + sqlite CLI |
+| Symbol refactor | Serena | Grep/Glob/Read |
+| UI primitives | Existing shadcn `components/ui` | Do not restyle SOC theme |
+| Architecture docs | `docs/` + `docs/knowledge/` | — |
+| Visual polish | UI Quality skill | WCAG checklist |
+| Memory | `.agents/memory/` | — |
+
+## Hard rules
+
+1. Application runtime must work with **zero** MCP servers.
+2. Never log cookies, tokens, passwords, API keys, private audio, or transcripts.
+3. No destructive DB ops without explicit user confirmation.
+4. Preserve VoxGuard navy/orange SOC identity; shadcn is additive only.
+5. After meaningful changes, update CodeMem worklog (no secrets).
+6. Agent registry: `.agents/AGENT_REGISTRY.md`

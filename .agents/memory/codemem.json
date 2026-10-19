@@ -1,14 +1,15 @@
 {
   "project": "VoxGuard AI",
-  "version": "1.0.0",
-  "last_updated": "2026-10-18T15:40:00+05:30",
+  "version": "1.1.0",
+  "last_updated": "2026-10-20T00:20:00+05:30",
   "active_stack": {
     "frontend": "Next.js 16.3.4 (Turbopack, App Router, React 19)",
-    "styling": "Tailwind CSS v4 + base-nova shadcn/ui components",
-    "backend": "FastAPI (Python 3.13 / Uvicorn)",
+    "styling": "Tailwind CSS v4 + base-nova shadcn/ui components (SOC navy/orange preserved)",
+    "backend": "FastAPI (Python 3.12+ / Uvicorn)",
     "database": "SQLite (backend/voxguard.db) with Postgres fallback",
-    "alerting": "Resend API v6.32.0 (HTML incident notification emails)",
-    "audio_forensics": "Web Audio Hann FFT (client preview) & Librosa STFT (backend evidence)"
+    "alerting": "Resend / SMTP optional",
+    "authenticity": "heuristics + sklearn SoftVoting joblib (not Jung AASIST GNN)",
+    "dev_tooling": "Context7/Chrome/DBHub/Serena configured; DBCode live in Cursor; app independent of MCP"
   },
   "memory_index": [
     {
@@ -40,6 +41,22 @@
       "category": "limitations",
       "file": "bugs-and-limitations.md",
       "title": "Known Audio Codec and Retention Boundaries"
+    },
+    {
+      "id": "MEM-006",
+      "category": "tooling",
+      "file": "worklog.md",
+      "title": "MCP tools configured vs live Cursor catalog (2026-10-20)"
     }
-  ]
+  ],
+  "safety": {
+    "never_store": [
+      "API keys",
+      "passwords",
+      "session tokens",
+      "private audio",
+      "sensitive transcripts",
+      "production DATABASE_URL credentials"
+    ]
+  }
 }

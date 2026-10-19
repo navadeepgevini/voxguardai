@@ -235,30 +235,38 @@ class AASISTAuthenticityEngine:
         """
         if not audio_data or len(audio_data) < 10:
             return {
-                "authenticity": 0.0,
-                "authStatus": "No Audio Bytes Provided",
+                "authenticity": 50.0,
+                "syntheticProbability": 50.0,
+                "detectionState": "INSUFFICIENT_AUDIO",
+                "authStatus": "INSUFFICIENT_AUDIO: No Audio Bytes Provided",
                 "spectralEntropy": 0.0,
                 "zcr": 0.0,
                 "vocoderArtifactsDetected": False,
                 "isSynthetic": False,
                 "jitter": 0.0,
                 "kurtosis": 0.0,
-                "syntheticIndicators": ["Missing Audio Payload"]
+                "syntheticIndicators": ["Missing Audio Payload"],
+                "modelVersion": self.model_version,
+                "voiced": False,
             }
 
         samples, sr = self._decode_audio(audio_data)
 
         if len(samples) < 320:
             return {
-                "authenticity": 0.0,
-                "authStatus": "Empty Audio Payload (Insufficient Samples)",
+                "authenticity": 50.0,
+                "syntheticProbability": 50.0,
+                "detectionState": "INSUFFICIENT_AUDIO",
+                "authStatus": "INSUFFICIENT_AUDIO: Empty Audio Payload (Insufficient Samples)",
                 "spectralEntropy": 0.0,
                 "zcr": 0.0,
-                "vocoderArtifactsDetected": True,
-                "isSynthetic": True,
+                "vocoderArtifactsDetected": False,
+                "isSynthetic": False,
                 "jitter": 0.0,
                 "kurtosis": 0.0,
-                "syntheticIndicators": ["Audio payload too short for spectral analysis"]
+                "syntheticIndicators": ["Audio payload too short for spectral analysis"],
+                "modelVersion": self.model_version,
+                "voiced": False,
             }
 
         # DC centering and normalization

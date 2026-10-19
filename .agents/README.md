@@ -58,3 +58,17 @@ Antigravity discovers these configurations hierarchically by walking up to the w
 - Rules in `.agents/rules/*.md` and project root `AGENTS.md` / `GEMINI.md` are automatically applied.
 - Skills in `.agents/skills/*/SKILL.md` are discovered and dynamically activated on demand.
 - Subagents in `.agents/subagents/*.json` are registered and invokable via `invoke_subagent`.
+
+## MCP & specialized tooling (optional)
+
+| File | Purpose |
+|------|---------|
+| `mcp_config.json` | Context7, Chrome DevTools, DBHub (readonly), Serena |
+| `tooling-flags.json` | Configured vs live availability |
+| `AGENT_REGISTRY.md` | Eight specialized agents + fallbacks |
+| `memory/` | CodeMem (no secrets) |
+
+Cursor users: copy `.cursor/mcp.json.example` → `.cursor/mcp.json` and set placeholder env vars.  
+Full guide: `docs/development-tooling.md`.
+
+**Critical:** FastAPI + Next.js remain fully usable if every MCP server is disabled.

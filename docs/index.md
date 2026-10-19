@@ -29,9 +29,11 @@ graph TD
         Sources["[[external-agent-sources|External Sources Audit]]"]
         Memory["[[project-memory|Project Memory & ADRs]]"]
         Tooling["[[development-tooling|Dev Tooling & Agents]]"]
+        GraphIdx["[[knowledge/graph-index|Feature Graph Index]]"]
     end
     
     Deploy --> AcademicDefense
+    Tooling --> GraphIdx
 ```
 
 ---
@@ -60,6 +62,7 @@ graph TD
 - [[security-privacy|Security, Privacy & Ethics Architecture]]: Zero-leak policy, voiceprint consent, right-to-erasure, and human-in-the-loop safeguards.
 - [[deployment|Deployment & Runbook Guide]]: Local setup, Docker multi-container, Render backend, and Vercel frontend guides.
 - [[development-tooling|Development Tooling Guide]]: Context7, Chrome DevTools, DBHub, Serena, shadcn/ui, and CodeMem memory.
+- [[knowledge/graph-index|Knowledge Graph Index]]: UI ↔ API ↔ engines ↔ DB ↔ notifications relationship map.
 - [[testing|Verification & Testing Protocol]]: Test case matrix (TC-001 through TC-008), automated test commands, and regression rules.
 
 ### 4. Academic Presentation & Defense

@@ -54,10 +54,20 @@ run_project.bat
 | Source | Location | Purpose |
 |--------|----------|---------|
 | VoxGuard rules | `.cursor/rules/voxguard-*.mdc` | Product + stack conventions |
+| Tooling agents rule | `.cursor/rules/tooling-agents.mdc` | Context7/DevTools/DB/Serena fallbacks |
+| MCP template | `.cursor/mcp.json.example` | Optional Context7/Chrome/DBHub/Serena |
 | i-have-adhd | `.cursor/skills/i-have-adhd/` | Action-first response style (`/i-have-adhd`) |
 | ECC adapter | `.cursor/` (if installed) | Plan / TDD / review harness |
 | Agency Agents | `.cursor/rules/agency-*.mdc` | Specialist personas |
 | Awesome Agents | `.cursor/references/awesome-agents.md` | Catalog bookmarks for future product work |
+| Antigravity agents | `.agents/` | Skills, subagents, CodeMem, MCP config |
+| Tooling guide | `docs/development-tooling.md` | Setup / disable / availability |
+
+### Specialized agents (dev-only)
+
+See `.agents/AGENT_REGISTRY.md`: Documentation (Context7), Browser Debug, Database, Code Intel (Serena), shadcn/a11y, Knowledge Graph, UI Quality, CodeMem.
+
+**App runtime does not depend on MCP.** If a tool is offline, use the documented fallback.
 
 ## Useful prompts
 

@@ -1,0 +1,65 @@
+{
+  "$schema_comment": "Graceful fallbacks when MCP/tools are unavailable. App runtime never depends on these.",
+  "version": "1.1.0",
+  "updated": "2026-10-20",
+  "tools": {
+    "context7": {
+      "configured": true,
+      "config_path": ".agents/mcp_config.json",
+      "live_in_cursor_session": false,
+      "requires": ["CONTEXT7_API_KEY", "network"],
+      "fallback": ["docs/", "WebSearch", "official docs via WebFetch"]
+    },
+    "chrome_devtools": {
+      "configured": true,
+      "config_path": ".agents/mcp_config.json",
+      "live_in_cursor_session": false,
+      "requires": ["Chrome with --remote-debugging-port", "npx"],
+      "fallback": ["manual browser DevTools", "Playwright/manual QA checklist"]
+    },
+    "dbhub": {
+      "configured": true,
+      "config_path": ".agents/mcp_config.json",
+      "live_in_cursor_session": false,
+      "requires": ["npx", "DBHUB_DSN or local sqlite path"],
+      "fallback": ["user-dbcode DBCode extension", "backend/database.py", "python sqlite3"]
+    },
+    "dbcode_extension": {
+      "configured": false,
+      "live_in_cursor_session": true,
+      "namespace": "user-dbcode.dbcode-extension-DBCode",
+      "note": "Detected ready in Cursor catalog as safe DB inspection alternative to DBHub"
+    },
+    "serena": {
+      "configured": true,
+      "config_path": ".agents/mcp_config.json",
+      "live_in_cursor_session": false,
+      "requires": ["uv/uvx", "git+https://github.com/oraios/serena"],
+      "fallback": ["Grep", "Glob", "Read", "Task explore agent"]
+    },
+    "shadcn_ui": {
+      "configured": true,
+      "live_in_cursor_session": true,
+      "path": "echoguard/src/components/ui",
+      "note": "Package + base-nova components installed; do not restyle SOC theme"
+    },
+    "graphify_obsidian": {
+      "configured": true,
+      "live_in_cursor_session": true,
+      "path": "docs/",
+      "note": "Markdown vault + Mermaid; Graphify CLI optional/not required for app"
+    },
+    "ui_quality_taste": {
+      "configured": true,
+      "live_in_cursor_session": true,
+      "skill": ".agents/skills/ui-quality-polish/SKILL.md",
+      "note": "Principles-based agent only; no proprietary assets"
+    },
+    "codemem": {
+      "configured": true,
+      "live_in_cursor_session": true,
+      "path": ".agents/memory/"
+    }
+  },
+  "application_runtime_depends_on_mcp": false
+}
