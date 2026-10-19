@@ -182,6 +182,7 @@ export interface AudioAnalysisResponse {
   kurtosis?: number;
   syntheticIndicators?: string[];
   spectrogram?: SpectrogramEvidence;
+  predictionState?: "LIKELY_GENUINE" | "LIKELY_SYNTHETIC" | "INCONCLUSIVE" | "ANALYSIS_FAILED" | "MODEL_UNAVAILABLE" | string;
   syntheticProbability?: number;
   detectionState?: string;
   sessionDetectionState?: string;

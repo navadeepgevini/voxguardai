@@ -430,7 +430,7 @@ export function AudioPreviewSpectrogram({ audioFile, className }: AudioPreviewSp
   return (
     <div
       className={cn(
-        "p-4 bg-white shadow-sm border border-gray-200 rounded-xl flex flex-col gap-3",
+        "p-4 bg-[#0D1422]/90 shadow-xl border border-[#223047] rounded-xl flex flex-col gap-3 text-[#F7F9FC] backdrop-blur-md",
         className
       )}
     >
@@ -439,10 +439,10 @@ export function AudioPreviewSpectrogram({ audioFile, className }: AudioPreviewSp
         <div className="flex items-center gap-2">
           <Activity className="w-5 h-5 text-[#F6821F]" />
           <div>
-            <h3 className="text-sm font-bold text-[#0F172A] tracking-tight">
+            <h3 className="text-sm font-bold text-white tracking-tight">
               Audio Preview Spectrogram
             </h3>
-            <p className="text-[11px] text-gray-500 font-medium">
+            <p className="text-[11px] text-[#74839B] font-medium">
               Preview only — analysis has not started.
             </p>
           </div>
@@ -454,17 +454,17 @@ export function AudioPreviewSpectrogram({ audioFile, className }: AudioPreviewSp
             className={cn(
               "text-xs font-medium border flex items-center gap-1.5",
               status === "ready"
-                ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                ? "bg-emerald-950/50 text-emerald-300 border-emerald-500/50"
                 : status === "computing"
-                ? "bg-orange-50 text-orange-800 border-orange-300"
+                ? "bg-orange-950/50 text-orange-300 border-orange-500/50"
                 : status === "unavailable"
-                ? "bg-amber-50 text-amber-800 border-amber-300"
-                : "bg-gray-100 text-gray-600 border-gray-200"
+                ? "bg-amber-950/50 text-amber-300 border-amber-500/50"
+                : "bg-[#121C2D] text-gray-400 border-[#223047]"
             )}
           >
             {status === "computing" && <RefreshCw className="w-3 h-3 text-[#F6821F] animate-spin" />}
-            {status === "ready" && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
-            {status === "unavailable" && <AlertCircle className="w-3.5 h-3.5 text-amber-600" />}
+            {status === "ready" && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+            {status === "unavailable" && <AlertCircle className="w-3.5 h-3.5 text-amber-400" />}
             {status === "idle" && <Radio className="w-3 h-3 text-gray-400" />}
             <span>
               {status === "ready"
@@ -484,14 +484,14 @@ export function AudioPreviewSpectrogram({ audioFile, className }: AudioPreviewSp
         <div
           role="status"
           aria-live="polite"
-          className="text-xs bg-slate-50 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-mono flex flex-wrap items-center justify-between gap-2"
+          className="text-xs bg-[#121C2D] border border-[#223047] text-[#A9B7CC] px-3 py-1.5 rounded-lg font-mono flex flex-wrap items-center justify-between gap-2"
         >
-          <span className="font-sans font-medium text-slate-900">
-            Spectrogram for <span className="font-semibold">{metadata.filename}</span>, duration{" "}
-            <span className="font-semibold">{metadata.duration}s</span>, sample rate{" "}
-            <span className="font-semibold">{metadata.sampleRate.toLocaleString()} Hz</span>.
+          <span className="font-sans font-medium text-gray-200">
+            Spectrogram for <span className="font-semibold text-white">{metadata.filename}</span>, duration{" "}
+            <span className="font-semibold text-[#F6821F]">{metadata.duration}s</span>, sample rate{" "}
+            <span className="font-semibold text-white">{metadata.sampleRate.toLocaleString()} Hz</span>.
           </span>
-          <span className="text-[11px] text-slate-500 font-mono">
+          <span className="text-[11px] text-[#74839B] font-mono">
             Nyquist: {(metadata.nyquistHz / 1000).toFixed(1)} kHz | 512-pt Hann FFT
           </span>
         </div>
@@ -551,7 +551,7 @@ export function AudioPreviewSpectrogram({ audioFile, className }: AudioPreviewSp
       </div>
 
       {/* Informative Helper Footer */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-gray-500 gap-1 pt-1 border-t border-gray-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-[#74839B] gap-1 pt-1 border-t border-[#1F2C42]">
         <p>
           Preview only — this client-side STFT is calculated locally in your browser for audio inspection and has not triggered server-side deepfake analysis.
         </p>

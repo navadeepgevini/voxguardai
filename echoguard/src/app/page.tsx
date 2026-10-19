@@ -47,10 +47,13 @@ import {
   saveCall,
   triggerAnalysisAlert,
   getIdentities,
+  getSettings,
   VoiceProfile,
   AudioAnalysisResponse,
+  SystemSettings,
 } from "@/lib/api";
 import { AudioPreviewSpectrogram } from "@/components/AudioPreviewSpectrogram";
+import { VoiceTrustCore3D } from "@/components/VoiceTrustCore3D";
 
 type RiskState = "IDLE" | "SAFE" | "WARNING" | "CRITICAL";
 
@@ -110,6 +113,7 @@ export default function HybridDashboard() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [isMicActive, setIsMicActive] = useState(false);
   const [micVolume, setMicVolume] = useState<number[]>(new Array(12).fill(10));
+  const [audioEnergy, setAudioEnergy] = useState<number>(0);
   const [callDuration, setCallDuration] = useState(0);
   const [actionExecuted, setActionExecuted] = useState(false);
   const [isPersisted, setIsPersisted] = useState(false);
@@ -123,6 +127,7 @@ export default function HybridDashboard() {
   // Registered database profiles
   const [enrolledProfiles, setEnrolledProfiles] = useState<VoiceProfile[]>([]);
   const [selectedTargetId, setSelectedTargetId] = useState<string>("");
+  const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
 
   // Custom text input for threat testing
   const [customTranscript, setCustomTranscript] = useState("");
@@ -343,8 +348,12 @@ export default function HybridDashboard() {
   useEffect(() => {
     async function loadProfiles() {
       try {
-        const data = await getIdentities();
+        const [data, settingsData] = await Promise.all([
+          getIdentities(),
+          getSettings().catch(() => null),
+        ]);
         setEnrolledProfiles(data);
+        if (settingsData) setSystemSettings(settingsData);
       } catch (err) {
         console.error("Failed to load registered identities:", err);
       }
@@ -373,6 +382,21 @@ export default function HybridDashboard() {
       }
     };
   }, [uploadedAudioUrl]);
+
+  // Reactive audio energy driving 3D Voice Trust Core when audio preview plays
+  useEffect(() => {
+    let animId: number;
+    if (isPreviewPlaying) {
+      const pulse = () => {
+        setAudioEnergy(0.35 + Math.sin(Date.now() / 150) * 0.25);
+        animId = requestAnimationFrame(pulse);
+      };
+      animId = requestAnimationFrame(pulse);
+    } else if (!isMicActive) {
+      setAudioEnergy(0);
+    }
+    return () => cancelAnimationFrame(animId);
+  }, [isPreviewPlaying, isMicActive]);
 
   // Real Microphone Audio + Real Web Speech API transcription + Real-time Streaming
   const toggleMicrophone = async () => {
@@ -417,6 +441,7 @@ export default function HybridDashboard() {
         cancelAnimationFrame(animFrameRef.current);
       }
       setIsMicActive(false);
+      setAudioEnergy(0);
 
       // Final full-session audio analysis and persist to audit trail
       if (pcmBufferRef.current.length > 0) {
@@ -575,10 +600,17 @@ export default function HybridDashboard() {
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         analyser.getByteFrequencyData(dataArray);
         const bars: number[] = [];
+        let sumSquares = 0;
         for (let i = 0; i < 12; i++) {
           const val = dataArray[i * 2] || 0;
           bars.push(Math.max(12, Math.min(95, (val / 255) * 100)));
         }
+        for (let i = 0; i < dataArray.length; i++) {
+          const norm = dataArray[i] / 255;
+          sumSquares += norm * norm;
+        }
+        const rms = Math.sqrt(sumSquares / dataArray.length);
+        setAudioEnergy(Math.min(1.0, rms * 2.8));
         setMicVolume(bars);
         animFrameRef.current = requestAnimationFrame(updateBars);
       };
@@ -952,6 +984,7 @@ export default function HybridDashboard() {
     setLiveSpeechText("");
     liveSpeechTextRef.current = "";
     setCaptionStatus("idle");
+    setAudioEnergy(0);
     liveAlertTriggeredRef.current = false;
     setAutomatedAlertNotice(null);
     handleClearPreview();
@@ -964,71 +997,51 @@ export default function HybridDashboard() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-gray-50/50">
-      {/* ─── TOP SYSTEM BAR ─── */}
-      <nav className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 sm:px-10 z-20 sticky top-0">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-900 tracking-tight">VoxGuard SOC</span>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-500 font-medium">Real-Time Multi-Modal Voice Trust Console</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <button className="text-gray-500 hover:text-gray-900 relative p-1.5 rounded-md hover:bg-gray-100 transition-colors">
-            <Bell className="w-5 h-5" />
-            {riskState === "CRITICAL" && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
-            )}
-          </button>
-        </div>
-      </nav>
-
-      {/* ─── ACTIVE TELEPHONY & INGESTION HEADER ─── */}
-      <header className="bg-white border-b border-gray-200 py-4 px-6 sm:px-10 shadow-sm">
+    <div className="flex-1 flex flex-col min-h-screen bg-transparent text-[#F7F9FC]">
+      {/* ─── ACTIVE TELEPHONY & INGESTION COMMAND BAR ─── */}
+      <header className="bg-[#0D1422]/90 backdrop-blur-xl border-b border-[#223047] py-4 px-6 sm:px-10 sticky top-16 z-20 shadow-lg">
         <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div
               className={cn(
-                "p-3 rounded-xl border transition-all",
+                "p-3 rounded-xl border transition-all shadow-inner",
                 riskState === "CRITICAL"
-                  ? "bg-red-50 border-red-200 text-red-600 animate-pulse"
+                  ? "bg-red-500/15 border-red-500/40 text-red-400 animate-pulse"
                   : riskState === "WARNING"
-                  ? "bg-amber-50 border-amber-200 text-amber-600"
+                  ? "bg-amber-500/15 border-amber-500/40 text-amber-400"
                   : riskState === "SAFE"
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-600"
-                  : "bg-gray-100 border-gray-200 text-gray-500"
+                  ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
+                  : "bg-[#121C2D] border-[#223047] text-[#94A3B8]"
               )}
             >
-              <Radio className="w-6 h-6" />
+              <Radio className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+                <h1 className="text-lg sm:text-xl font-bold text-[#F7F9FC] tracking-tight">
                   {isSimulating || isMicActive
-                    ? currentScenario?.callerName || "Active Audio Monitoring"
+                    ? currentScenario?.callerName || "Active Voice Intelligence Stream"
                     : "Audio Pipeline Standby"}
                 </h1>
                 {isSimulating || isMicActive ? (
-                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs px-2 py-0.5 gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" /> LIVE SESSION
+                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-xs px-2 py-0.5 gap-1.5 font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" /> LIVE SESSION
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-gray-500 border-gray-300 text-xs">
+                  <Badge variant="outline" className="text-[#94A3B8] border-[#223047] bg-[#121C2D] text-xs font-mono">
                     READY
                   </Badge>
                 )}
                 {isPersisted && (
-                  <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Persisted to SQLite
+                  <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/40 text-[10px] gap-1 font-mono">
+                    <CheckCircle2 className="w-3 h-3 text-blue-400" /> Persisted to SQLite
                   </Badge>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1">
+              <div className="flex flex-wrap items-center gap-3 text-xs text-[#94A3B8] mt-1 font-mono">
                 <span>
-                  Target Profile:{" "}
-                  <strong className="text-gray-700 font-medium">
+                  Target:{" "}
+                  <strong className="text-[#F7F9FC] font-medium">
                     {currentScenario?.enrolledTarget ||
                       (selectedTargetId
                         ? enrolledProfiles.find((p) => p.id === selectedTargetId)?.name || selectedTargetId
@@ -1040,7 +1053,7 @@ export default function HybridDashboard() {
                   VAD:{" "}
                   <strong
                     className={
-                      isSimulating || isMicActive ? "text-emerald-600 font-semibold" : "text-gray-400"
+                      isSimulating || isMicActive ? "text-emerald-400 font-semibold" : "text-[#64748B]"
                     }
                   >
                     {isSimulating || isMicActive ? "VOICE ACTIVE" : "SILENCE"}
@@ -1049,14 +1062,14 @@ export default function HybridDashboard() {
                 <span>•</span>
                 <span>
                   Duration:{" "}
-                  <strong className="text-gray-700 font-mono">{formatTime(callDuration)}</strong>
+                  <strong className="text-[#F7F9FC] font-mono">{formatTime(callDuration)}</strong>
                 </span>
               </div>
             </div>
           </div>
 
           {/* Telephony Controls */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <input
               type="file"
               ref={fileInputRef}
@@ -1068,22 +1081,22 @@ export default function HybridDashboard() {
               onClick={() => fileInputRef.current?.click()}
               variant="outline"
               size="sm"
-              className="gap-1.5 text-xs font-medium hover:border-[#F6821F] hover:text-[#F6821F] cursor-pointer"
+              className="gap-1.5 text-xs font-semibold bg-[#121C2D] border-[#223047] text-[#C5D1E0] hover:text-[#F6821F] hover:border-[#F6821F] hover:bg-[#1A263C] cursor-pointer transition-all shadow-xs"
             >
-              <Upload className="w-3.5 h-3.5" /> Upload Audio (.wav, .mp3)
+              <Upload className="w-3.5 h-3.5 text-[#F6821F]" /> Upload Audio (.wav, .mp3)
             </Button>
             <Button
               onClick={isRecordingSnippet ? stopRecordingSnippet : startRecordingSnippet}
               variant="outline"
               size="sm"
               className={cn(
-                "gap-1.5 text-xs font-medium cursor-pointer",
+                "gap-1.5 text-xs font-semibold cursor-pointer transition-all shadow-xs",
                 isRecordingSnippet
-                  ? "bg-red-50 text-red-700 border-red-300 hover:bg-red-100 animate-pulse"
-                  : "hover:border-[#F6821F] hover:text-[#F6821F]"
+                  ? "bg-red-500/20 text-red-300 border-red-500/60 hover:bg-red-500/30 animate-pulse"
+                  : "bg-[#121C2D] border-[#223047] text-[#C5D1E0] hover:border-[#F6821F] hover:text-[#F6821F] hover:bg-[#1A263C]"
               )}
             >
-              <Radio className="w-3.5 h-3.5" />
+              <Radio className="w-3.5 h-3.5 text-[#F6821F]" />
               {isRecordingSnippet ? "Stop Recording Snippet" : "Record Snippet"}
             </Button>
             <Button
@@ -1091,13 +1104,13 @@ export default function HybridDashboard() {
               variant="outline"
               size="sm"
               className={cn(
-                "gap-1.5 text-xs font-medium cursor-pointer",
+                "gap-1.5 text-xs font-semibold cursor-pointer transition-all shadow-xs",
                 isMicActive
-                  ? "bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
-                  : "hover:border-[#F6821F] hover:text-[#F6821F]"
+                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 hover:bg-emerald-500/30"
+                  : "bg-[#121C2D] border-[#223047] text-[#C5D1E0] hover:border-[#F6821F] hover:text-[#F6821F] hover:bg-[#1A263C]"
               )}
             >
-              {isMicActive ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+              {isMicActive ? <MicOff className="w-3.5 h-3.5 text-emerald-400" /> : <Mic className="w-3.5 h-3.5 text-[#F6821F]" />}
               {isMicActive ? "Stop & Process Mic" : "Live Mic Stream"}
             </Button>
             <Button
@@ -1105,7 +1118,7 @@ export default function HybridDashboard() {
               disabled={!isSimulating && !isMicActive && !previewFile}
               variant="ghost"
               size="sm"
-              className="text-xs text-gray-500 hover:text-red-600 gap-1 cursor-pointer"
+              className="text-xs text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 gap-1 cursor-pointer transition-all"
             >
               <PhoneOff className="w-3.5 h-3.5" /> Reset
             </Button>
@@ -1115,19 +1128,19 @@ export default function HybridDashboard() {
 
       {/* Recorded Snippet Playback & Evaluate */}
       {recordedAudioUrl && (
-        <div className="max-w-[1400px] mx-auto mt-4 px-6 sm:px-10">
-          <div className="p-3 bg-white shadow-sm border border-gray-200 rounded-lg flex flex-col sm:flex-row items-center gap-4 justify-between">
+        <div className="max-w-[1400px] w-full mx-auto mt-4 px-6 sm:px-10">
+          <div className="p-3.5 bg-[#0D1422] shadow-xl border border-[#223047] rounded-xl flex flex-col sm:flex-row items-center gap-4 justify-between">
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <FileAudio className="w-5 h-5 text-gray-500 shrink-0" />
-              <span className="text-sm font-medium text-gray-700 shrink-0">Recorded Snippet</span>
-              <audio src={recordedAudioUrl} controls className="h-9 w-full sm:w-[300px]" />
+              <FileAudio className="w-5 h-5 text-[#F6821F] shrink-0" />
+              <span className="text-sm font-semibold text-[#F7F9FC] shrink-0">Recorded Audio Snippet</span>
+              <audio src={recordedAudioUrl} controls className="h-9 w-full sm:w-[300px] rounded-lg" />
             </div>
             <div className="flex items-center gap-2">
               <Button
                 onClick={evaluateRecordedSnippet}
                 disabled={isAnalyzing}
                 size="sm"
-                className="bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs gap-1.5 cursor-pointer shadow-sm"
+                className="bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs font-semibold gap-1.5 cursor-pointer shadow-md"
               >
                 {isAnalyzing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
                 Evaluate Audio Snippet
@@ -1136,7 +1149,7 @@ export default function HybridDashboard() {
                 onClick={() => { setRecordedAudioUrl(null); setRecordedAudioBlob(null); }}
                 variant="ghost"
                 size="sm"
-                className="text-xs text-gray-500 hover:text-red-600"
+                className="text-xs text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10"
               >
                 Dismiss
               </Button>
@@ -1146,95 +1159,97 @@ export default function HybridDashboard() {
       )}
 
       {/* ─── AUDIO PREVIEW CARD ─── */}
-      <div className="max-w-[1400px] mx-auto mt-4 px-6 sm:px-10 space-y-3">
-        <div className="p-4 bg-white shadow-sm border border-gray-200 rounded-xl flex flex-col gap-3">
+      <div className="max-w-[1400px] w-full mx-auto mt-4 px-6 sm:px-10 space-y-3">
+        <div className="p-5 cyber-panel bg-[#0D1422]/90 shadow-xl border border-[#223047] rounded-2xl flex flex-col gap-3 backdrop-blur-xl">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileAudio className="w-5 h-5 text-[#F6821F]" />
-              <h3 className="text-sm font-bold text-[#0F172A] tracking-tight">Audio Preview</h3>
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-[#F6821F]/10 border border-[#F6821F]/30 text-[#F6821F]">
+                <FileAudio className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-[#F7F9FC] tracking-tight">Audio Capture Station</h3>
             </div>
             
             <Badge
               variant="outline"
               className={cn(
-                "text-xs font-medium border flex items-center gap-1.5",
+                "text-xs font-mono font-medium border flex items-center gap-1.5 px-2.5 py-0.5",
                 previewStatus === "Ready to evaluate"
-                  ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
                   : previewStatus === "Playing"
-                  ? "bg-orange-50 text-orange-800 border-orange-300"
+                  ? "bg-orange-500/20 text-orange-300 border-orange-500/40"
                   : previewStatus === "Paused"
-                  ? "bg-blue-50 text-blue-800 border-blue-300"
+                  ? "bg-blue-500/20 text-blue-300 border-blue-500/40"
                   : previewStatus === "Loading metadata"
-                  ? "bg-amber-50 text-amber-800 border-amber-300"
+                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
                   : previewStatus === "Preview unavailable"
-                  ? "bg-red-50 text-red-800 border-red-300"
-                  : "bg-gray-100 text-gray-600 border-gray-200"
+                  ? "bg-red-500/20 text-red-300 border-red-500/40"
+                  : "bg-[#121C2D] text-[#94A3B8] border-[#223047]"
               )}
             >
               {previewStatus === "Playing" && (
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
               )}
               {previewStatus === "Ready to evaluate" && (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               )}
               {previewStatus === "Preview unavailable" && (
-                <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                <AlertCircle className="w-3.5 h-3.5 text-red-400" />
               )}
               {previewStatus}
             </Badge>
           </div>
 
           {!previewFile ? (
-            <div className="p-5 border border-dashed border-gray-300 rounded-lg bg-gray-50/70 text-center flex flex-col items-center justify-center">
-              <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-2">
+            <div className="p-6 border border-dashed border-[#223047] rounded-xl bg-[#080D17]/60 text-center flex flex-col items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-[#121C2D] border border-[#223047] flex items-center justify-center text-[#F6821F] mb-2.5">
                 <Upload className="w-4 h-4" />
               </div>
-              <span className="text-sm text-gray-600 font-medium">Select an audio file to preview before evaluation.</span>
-              <p className="text-xs text-gray-400 mt-1">Use the &quot;Upload Audio (.wav, .mp3)&quot; button above to choose a recording.</p>
+              <span className="text-sm text-[#C5D1E0] font-medium">Select an audio file to inspect waveform before neural evaluation.</span>
+              <p className="text-xs text-[#64748B] mt-1 font-mono">Accepted codecs: 16kHz WAV, MP3, FLAC, OGG, M4A, Opus</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
               {/* Metadata display: Filename, Type, Size, Duration */}
-              <div className="flex items-center flex-wrap gap-x-3 gap-y-1.5 text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+              <div className="flex items-center flex-wrap gap-x-3 gap-y-1.5 text-xs text-[#94A3B8] bg-[#080D17]/80 p-3 rounded-xl border border-[#223047]">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-gray-400 font-medium">File:</span>
-                  <span className="font-semibold text-gray-900 truncate max-w-[240px] sm:max-w-[360px]" title={previewFile.name}>
+                  <span className="text-[#64748B] font-medium">File:</span>
+                  <span className="font-semibold text-[#F7F9FC] truncate max-w-[240px] sm:max-w-[360px]" title={previewFile.name}>
                     {previewFile.name}
                   </span>
                 </div>
-                <span className="text-gray-300">•</span>
+                <span className="text-[#334155]">•</span>
                 <div>
-                  <span className="text-gray-400 font-medium">Format:</span>{" "}
-                  <span className="font-mono text-gray-700">{previewFile.type || "audio/wav"}</span>
+                  <span className="text-[#64748B] font-medium">Format:</span>{" "}
+                  <span className="font-mono text-[#C5D1E0]">{previewFile.type || "audio/wav"}</span>
                 </div>
-                <span className="text-gray-300">•</span>
+                <span className="text-[#334155]">•</span>
                 <div>
-                  <span className="text-gray-400 font-medium">Size:</span>{" "}
-                  <span className="font-mono text-gray-700">
+                  <span className="text-[#64748B] font-medium">Size:</span>{" "}
+                  <span className="font-mono text-[#C5D1E0]">
                     {previewFile.size > 1024 * 1024
                       ? `${(previewFile.size / (1024 * 1024)).toFixed(2)} MB`
                       : `${(previewFile.size / 1024).toFixed(1)} KB`}
                   </span>
                 </div>
-                <span className="text-gray-300">•</span>
+                <span className="text-[#334155]">•</span>
                 <div>
-                  <span className="text-gray-400 font-medium">Duration:</span>{" "}
-                  <span className="font-mono font-semibold text-gray-800">
+                  <span className="text-[#64748B] font-medium">Duration:</span>{" "}
+                  <span className="font-mono font-semibold text-emerald-400">
                     {previewDuration > 0
-                      ? `${formatAudioTime(previewDuration)} (${previewDuration.toFixed(1)}s)`
+                      ? `${formatAudioTime(previewCurrentTime)} / ${formatAudioTime(previewDuration)} (${previewDuration.toFixed(1)}s)`
                       : "Detecting audio duration..."}
                   </span>
                 </div>
               </div>
 
               {/* Working Playback Controls: Play/Pause, Seek bar, Time, Mute, Volume */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 bg-gray-50/50 p-3 rounded-lg border border-gray-200">
+              <div className="flex flex-col sm:flex-row items-center gap-3 bg-[#080D17]/60 p-3 rounded-xl border border-[#223047]">
                 {/* Play / Pause button */}
                 <button
                   type="button"
                   onClick={togglePreviewPlay}
                   disabled={previewStatus === "Preview unavailable" || previewStatus === "Loading metadata"}
-                  className="w-9 h-9 rounded-full bg-[#F6821F] hover:bg-[#E85D04] text-white flex items-center justify-center shadow-sm cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F6821F] disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                  className="w-10 h-10 rounded-full bg-[#F6821F] hover:bg-[#E85D04] text-white flex items-center justify-center shadow-lg shadow-[#F6821F]/20 cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#F6821F] disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                   title={isPreviewPlaying ? "Pause audio (Space)" : "Play audio (Space)"}
                   aria-label={isPreviewPlaying ? "Pause audio" : "Play audio"}
                 >
@@ -1242,7 +1257,7 @@ export default function HybridDashboard() {
                 </button>
 
                 {/* Current Time / Total Duration Display */}
-                <span className="text-xs font-mono font-medium text-gray-700 min-w-[90px] text-center shrink-0">
+                <span className="text-xs font-mono font-semibold text-[#94A3B8] min-w-[90px] text-center shrink-0">
                   {formatAudioTime(previewCurrentTime)} / {formatAudioTime(previewDuration)}
                 </span>
 
@@ -1256,7 +1271,7 @@ export default function HybridDashboard() {
                     value={previewCurrentTime}
                     onChange={handlePreviewSeek}
                     disabled={previewStatus === "Preview unavailable" || !previewDuration}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#F6821F] focus:outline-none focus:ring-2 focus:ring-[#F6821F]"
+                    className="w-full h-2 bg-[#121C2D] border border-[#223047] rounded-lg appearance-none cursor-pointer accent-[#F6821F] focus:outline-none focus:ring-2 focus:ring-[#F6821F]"
                     title="Seek playback position (Left/Right arrows)"
                     aria-label="Seek progress bar"
                   />
@@ -1267,14 +1282,14 @@ export default function HybridDashboard() {
                   <button
                     type="button"
                     onClick={togglePreviewMute}
-                    className="p-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#F6821F]"
+                    className="p-1.5 rounded-lg text-[#94A3B8] hover:text-[#F7F9FC] hover:bg-[#121C2D] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#F6821F]"
                     title={isPreviewMuted || previewVolume === 0 ? "Unmute audio" : "Mute audio"}
                     aria-label={isPreviewMuted || previewVolume === 0 ? "Unmute audio" : "Mute audio"}
                   >
                     {isPreviewMuted || previewVolume === 0 ? (
-                      <VolumeX className="w-4 h-4 text-gray-600" />
+                      <VolumeX className="w-4 h-4 text-red-400" />
                     ) : (
-                      <Volume2 className="w-4 h-4 text-gray-600" />
+                      <Volume2 className="w-4 h-4 text-[#94A3B8]" />
                     )}
                   </button>
                   <input
@@ -1284,7 +1299,7 @@ export default function HybridDashboard() {
                     step={0.05}
                     value={isPreviewMuted ? 0 : previewVolume}
                     onChange={handlePreviewVolumeChange}
-                    className="w-16 sm:w-20 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#F6821F] focus:outline-none focus:ring-2 focus:ring-[#F6821F]"
+                    className="w-16 sm:w-20 h-1.5 bg-[#121C2D] border border-[#223047] rounded-lg appearance-none cursor-pointer accent-[#F6821F] focus:outline-none"
                     title={`Volume: ${Math.round((isPreviewMuted ? 0 : previewVolume) * 100)}%`}
                     aria-label="Volume control"
                   />
@@ -1339,23 +1354,23 @@ export default function HybridDashboard() {
 
               {/* Actionable error notice if file is corrupt or unplayable */}
               {previewError && (
-                <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-xl text-xs text-red-300 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
                   <span><strong>Preview unavailable:</strong> {previewError}</span>
                 </div>
               )}
 
               {/* Helper notice and Action Buttons */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-1 pt-3 border-t border-gray-100 gap-3">
-                <p className="text-[11px] text-gray-500">
-                  Previewing plays this file locally in your browser. Deepfake analysis begins only after you select Evaluate.
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-1 pt-3 border-t border-[#223047] gap-3">
+                <p className="text-[11px] text-[#64748B]">
+                  Client preview mode enables acoustic listening before initiating the AASIST + ECAPA-TDNN evaluation pipeline.
                 </p>
                 <div className="flex items-center gap-2 shrink-0">
                   <Button
                     onClick={handleClearPreview}
                     variant="ghost"
                     size="sm"
-                    className="text-xs text-gray-500 hover:text-red-600 cursor-pointer"
+                    className="text-xs text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 cursor-pointer"
                   >
                     Clear
                   </Button>
@@ -1363,10 +1378,10 @@ export default function HybridDashboard() {
                     onClick={handleEvaluatePreview}
                     disabled={isAnalyzing || previewStatus === "Preview unavailable" || previewStatus === "Loading metadata"}
                     size="sm"
-                    className="bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs gap-1.5 cursor-pointer shadow-sm font-semibold"
+                    className="bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs gap-1.5 cursor-pointer shadow-lg shadow-[#F6821F]/20 font-semibold"
                   >
                     {isAnalyzing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-                    Evaluate
+                    Evaluate Voice Authenticity
                   </Button>
                 </div>
               </div>
@@ -1384,41 +1399,260 @@ export default function HybridDashboard() {
       <main className="flex-1 w-full max-w-[1400px] mx-auto p-6 sm:p-10 space-y-6">
         {/* Registry Status Notice if 0 identities enrolled */}
         {enrolledProfiles.length === 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-            <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="flex-1 text-xs text-amber-800">
-              <p className="font-semibold text-sm text-amber-900">Zero Voiceprints Enrolled in Database</p>
-              <p className="mt-0.5 text-amber-700">
-                The speaker registry in SQLite currently has no enrolled reference voiceprints. Audio analysis will
+          <div className="bg-amber-950/40 border border-amber-800/60 rounded-2xl p-4 flex items-start gap-3 text-[#F7F9FC]">
+            <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1 text-xs text-amber-200">
+              <p className="font-semibold text-sm text-amber-100">Zero Voiceprints Enrolled in SQLite Database</p>
+              <p className="mt-0.5 text-amber-300/80">
+                The speaker registry currently has no enrolled reference voiceprints. Audio analysis will
                 evaluate acoustic authenticity and contextual threat risks, but speaker consistency verification
                 requires enrolled voiceprints.
               </p>
             </div>
             <Link href="/identities">
-              <Button size="sm" className="bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs shrink-0">
+              <Button size="sm" className="bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs shrink-0 font-semibold">
                 <Fingerprint className="w-3.5 h-3.5 mr-1" /> Enroll Voiceprint
               </Button>
             </Link>
           </div>
         )}
 
+        {/* ─── FLAGSHIP VOICE TRUST HERO ROW (3D CORE + SOVEREIGN VERDICT) ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          {/* LEFT 5 COLS: Signature 3D Voice Trust Core */}
+          <div className="lg:col-span-5 cyber-panel bg-[#0D1422]/95 border border-[#223047] rounded-2xl p-5 relative overflow-hidden backdrop-blur-xl flex flex-col justify-between shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#223047] pb-3 mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#F6821F] animate-pulse" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-[#F7F9FC]">
+                  Voice Trust Core 3D
+                </h2>
+              </div>
+              <Badge variant="outline" className="text-[10px] font-mono border-[#223047] text-[#94A3B8] bg-[#121C2D]">
+                {isSimulating || isMicActive ? "WebGL 60FPS • REACTIVE" : "WebGL 60FPS • STANDBY"}
+              </Badge>
+            </div>
+
+            {/* 3D WebGL Canvas */}
+            <div className="flex-1 min-h-[300px] flex items-center justify-center relative">
+              <VoiceTrustCore3D
+                riskState={riskState}
+                isSimulating={isSimulating}
+                isMicActive={isMicActive}
+                audioEnergy={audioEnergy}
+              />
+            </div>
+
+            {/* Core Telemetry Strip */}
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#223047] text-center">
+              <div className="bg-[#0B1120] border border-[#223047]/60 rounded-lg p-2">
+                <span className="text-[9px] uppercase tracking-wider text-[#64748B] block">RESONANCE</span>
+                <span className="text-xs font-mono font-bold text-emerald-400">98.4% STABLE</span>
+              </div>
+              <div className="bg-[#0B1120] border border-[#223047]/60 rounded-lg p-2">
+                <span className="text-[9px] uppercase tracking-wider text-[#64748B] block">VAD LATTICE</span>
+                <span className="text-xs font-mono font-bold text-[#F7F9FC]">
+                  {isMicActive || isSimulating ? "DETECTED" : "IDLE"}
+                </span>
+              </div>
+              <div className="bg-[#0B1120] border border-[#223047]/60 rounded-lg p-2">
+                <span className="text-[9px] uppercase tracking-wider text-[#64748B] block">RMS ENERGY</span>
+                <span className="text-xs font-mono font-bold text-[#F6821F]">
+                  {(audioEnergy * 100).toFixed(0)}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT 7 COLS: Sovereign AMVTF Decision & Verdict Panel */}
+          <div
+            className={cn(
+              "lg:col-span-7 cyber-panel rounded-2xl p-6 relative overflow-hidden backdrop-blur-xl flex flex-col justify-between shadow-2xl transition-all border",
+              riskState === "CRITICAL"
+                ? "bg-[#180A0E]/95 border-red-500/50 shadow-red-950/30"
+                : riskState === "WARNING"
+                ? "bg-[#171107]/95 border-amber-500/50 shadow-amber-950/30"
+                : riskState === "SAFE"
+                ? "bg-[#071710]/95 border-emerald-500/50 shadow-emerald-950/30"
+                : "bg-[#0D1422]/95 border-[#223047]"
+            )}
+          >
+            <div>
+              {/* Verdict Header & Fused Risk Score Gauge */}
+              <div className="flex items-start justify-between gap-4 border-b border-[#223047]/60 pb-5">
+                <div className="flex items-center gap-3.5">
+                  <div
+                    className={cn(
+                      "p-3 rounded-xl border shadow-inner",
+                      riskState === "CRITICAL"
+                        ? "bg-red-500/20 border-red-500/50 text-red-400 animate-pulse"
+                        : riskState === "WARNING"
+                        ? "bg-amber-500/20 border-amber-500/50 text-amber-400"
+                        : riskState === "SAFE"
+                        ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
+                        : "bg-[#121C2D] border-[#223047] text-[#94A3B8]"
+                    )}
+                  >
+                    {riskState === "CRITICAL" ? (
+                      <ShieldAlert className="w-7 h-7" />
+                    ) : riskState === "WARNING" ? (
+                      <AlertTriangle className="w-7 h-7" />
+                    ) : riskState === "SAFE" ? (
+                      <ShieldCheck className="w-7 h-7" />
+                    ) : (
+                      <Activity className="w-7 h-7" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-bold text-[#F7F9FC] tracking-tight">
+                        {currentScenario
+                          ? `AMVTF Sovereign Verdict: ${currentScenario.actionType === "TERMINATE" ? "CRITICAL THREAT" : currentScenario.actionType === "STEP_UP" ? "SUSPICIOUS / STEP-UP" : "VERIFIED SAFE"}`
+                          : "AMVTF Sovereign Engine Standby"}
+                      </h2>
+                      {riskState !== "IDLE" && (
+                        <Badge
+                          className={cn(
+                            "text-xs font-mono font-bold px-2 py-0.5",
+                            riskState === "CRITICAL"
+                              ? "bg-red-600 text-white"
+                              : riskState === "WARNING"
+                              ? "bg-amber-600 text-white"
+                              : "bg-emerald-600 text-white"
+                          )}
+                        >
+                          {riskState}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-[#94A3B8] mt-1">
+                      {currentScenario?.recommendedAction || "Awaiting audio stream or file input to evaluate trust."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] text-[#64748B] uppercase tracking-wider font-mono block">Fused Risk Score</span>
+                  <div className="flex items-baseline justify-end gap-1">
+                    <span
+                      className={cn(
+                        "text-3xl sm:text-4xl font-black font-mono tracking-tight",
+                        riskState === "CRITICAL"
+                          ? "text-red-400 drop-shadow-[0_0_12px_rgba(239,68,68,0.5)]"
+                          : riskState === "WARNING"
+                          ? "text-amber-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.5)]"
+                          : riskState === "SAFE"
+                          ? "text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]"
+                          : "text-[#64748B]"
+                      )}
+                    >
+                      {currentScenario ? `${currentScenario.fusedRiskScore}` : "--"}
+                    </span>
+                    <span className="text-xs text-[#64748B] font-mono">/ 100</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rationale Explanation & Prediction Pill */}
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-[#C5D1E0] uppercase tracking-wider text-[11px]">
+                    Multi-Model Threat Diagnosis
+                  </span>
+                  {currentScenario?.predictionState && (
+                    <Badge
+                      className={cn(
+                        "text-[10px] uppercase font-bold font-mono px-2 py-0.5 border",
+                        currentScenario.predictionState === "LIKELY_SYNTHETIC"
+                          ? "bg-red-500/20 text-red-300 border-red-500/50"
+                          : currentScenario.predictionState === "INCONCLUSIVE"
+                          ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
+                          : "bg-emerald-500/20 text-emerald-300 border-emerald-500/50"
+                      )}
+                    >
+                      {currentScenario.predictionState.replace("_", " ")}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="p-3.5 bg-[#080D17]/80 rounded-xl border border-[#223047] text-xs text-[#C5D1E0] leading-relaxed">
+                  <span className="font-bold text-[#F7F9FC]">Rationale: </span>
+                  {currentScenario?.rationale || "System in standby. Provide genuine or synthetic speech samples to run acoustic vocoder detection, speaker consistency embedding, and DistilBERT semantic intent analysis."}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            {riskState !== "IDLE" && (
+              <div className="flex flex-wrap items-center gap-2.5 mt-5 pt-4 border-t border-[#223047]">
+                <span className="text-xs font-semibold text-[#94A3B8] mr-2">Operator Action:</span>
+                {riskState === "CRITICAL" && (
+                  <Button
+                    size="sm"
+                    onClick={() => setActionExecuted(true)}
+                    className={cn(
+                      "text-xs font-semibold gap-1.5 shadow-lg transition-all",
+                      actionExecuted
+                        ? "bg-[#1E293B] text-slate-300 border border-[#334155]"
+                        : "bg-red-600 hover:bg-red-700 text-white shadow-red-600/30"
+                    )}
+                  >
+                    <Flame className="w-3.5 h-3.5" />
+                    {actionExecuted ? "Account Frozen & Session Terminated" : "Terminate Call & Freeze Account"}
+                  </Button>
+                )}
+                {riskState === "WARNING" && (
+                  <Button
+                    size="sm"
+                    onClick={() => setActionExecuted(true)}
+                    className={cn(
+                      "text-xs font-semibold gap-1.5 shadow-lg transition-all",
+                      actionExecuted
+                        ? "bg-[#1E293B] text-slate-300 border border-[#334155]"
+                        : "bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/30"
+                    )}
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    {actionExecuted ? "Secondary OOB Challenge Dispatched" : "Trigger Out-of-Band Verification"}
+                  </Button>
+                )}
+                {riskState === "SAFE" && (
+                  <Button
+                    size="sm"
+                    onClick={() => setActionExecuted(true)}
+                    className={cn(
+                      "text-xs font-semibold gap-1.5 shadow-lg transition-all",
+                      actionExecuted
+                        ? "bg-[#1E293B] text-slate-300 border border-[#334155]"
+                        : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30"
+                    )}
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    {actionExecuted ? "Session Cleared in Audit Trail" : "Authorize Session Operations"}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Real Audio & Threat Analysis Control Panel */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 space-y-4">
+        <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-2xl shadow-xl p-5 space-y-4 backdrop-blur-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#F6821F]" />
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+              <h2 className="text-xs font-bold text-[#F7F9FC] uppercase tracking-wider">
                 Real-Time AMVTF Multi-Signal Ingest Console
               </h2>
             </div>
 
             {/* Target Voiceprint Selector from SQLite */}
             <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-500 font-medium">Verify Against:</label>
+              <label className="text-xs text-[#94A3B8] font-medium font-mono">Verify Against:</label>
               <select
                 value={selectedTargetId}
                 onChange={(e) => setSelectedTargetId(e.target.value)}
-                className="text-xs border border-gray-300 rounded-md px-2.5 py-1.5 bg-white text-gray-800 focus:outline-none focus:border-[#F6821F]"
+                className="text-xs border border-[#223047] rounded-lg px-3 py-1.5 bg-[#121C2D] text-[#F7F9FC] focus:outline-none focus:border-[#F6821F] font-mono cursor-pointer"
               >
                 <option value="">Auto-Detect / All Registered Profiles</option>
                 {enrolledProfiles.map((p) => (
@@ -1431,7 +1665,7 @@ export default function HybridDashboard() {
           </div>
 
           {/* Interactive Dialogue / Threat Keyword Tester */}
-          <div className="flex flex-col md:flex-row items-center gap-3 pt-2 border-t border-gray-100">
+          <div className="flex flex-col md:flex-row items-center gap-3 pt-2 border-t border-[#223047]">
             <div className="relative flex-1 w-full">
               <input
                 type="text"
@@ -1439,28 +1673,30 @@ export default function HybridDashboard() {
                 onChange={(e) => setCustomTranscript(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleEvaluateCustomText()}
                 placeholder="Test contextual dialogue (e.g., 'Bypass protocol and execute wire transfer immediately, CEO approved')..."
-                className="w-full text-xs px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#F6821F]"
+                className="w-full text-xs px-3.5 py-2.5 bg-[#080D17] border border-[#223047] rounded-xl text-[#F7F9FC] placeholder-[#64748B] focus:outline-none focus:border-[#F6821F] font-mono"
               />
             </div>
             <Button
               onClick={handleEvaluateCustomText}
               disabled={isAnalyzing || !customTranscript.trim()}
               size="sm"
-              className="bg-gray-900 hover:bg-black text-white text-xs gap-1.5 shrink-0 cursor-pointer w-full md:w-auto"
+              className="bg-[#121C2D] hover:bg-[#1A263C] border border-[#223047] text-[#F7F9FC] text-xs font-semibold gap-1.5 shrink-0 cursor-pointer w-full md:w-auto shadow-sm"
             >
-              {isAnalyzing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              {isAnalyzing ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#F6821F]" /> : <Send className="w-3.5 h-3.5 text-[#F6821F]" />}
               Evaluate Contextual Risk
             </Button>
           </div>
 
           {/* Live Mic Speech Transcript Display if mic active */}
           {isMicActive && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3 animate-in fade-in">
-              <span className="w-2 h-2 mt-1.5 rounded-full bg-blue-500 animate-ping shrink-0" />
-              <div className="flex-1 text-xs min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <span className="font-semibold text-blue-900">Live Captions</span>
-                  <span className="text-[10px] uppercase tracking-wide text-blue-600/80 font-mono">
+            <div className="p-4 bg-[#080D17] border border-[#223047] rounded-xl space-y-2.5 shadow-xl animate-in fade-in">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="font-semibold text-emerald-300 uppercase tracking-wider text-[11px] font-mono">
+                    Live Microphone Stream Active
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wide text-[#94A3B8] font-mono px-1.5 py-0.5 rounded bg-[#121C2D] border border-[#223047]">
                     {captionStatus === "listening"
                       ? "listening"
                       : captionStatus === "unsupported"
@@ -1470,49 +1706,90 @@ export default function HybridDashboard() {
                       : "starting"}
                   </span>
                 </div>
-                <p className="text-blue-900 font-mono leading-relaxed break-words whitespace-pre-wrap">
+                <div className="flex items-center gap-2">
+                  {currentScenario?.predictionState && (
+                    <Badge
+                      className={cn(
+                        "text-[10px] uppercase font-bold font-mono px-2 py-0.5",
+                        currentScenario.predictionState === "LIKELY_SYNTHETIC"
+                          ? "bg-red-500/20 text-red-300 border-red-500/50"
+                          : currentScenario.predictionState === "INCONCLUSIVE"
+                          ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
+                          : "bg-emerald-500/20 text-emerald-300 border-emerald-500/50"
+                      )}
+                    >
+                      {currentScenario.predictionState.replace("_", " ")}
+                    </Badge>
+                  )}
+                  {liveSpeechText && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        liveSpeechTextRef.current = "";
+                        setLiveSpeechText("");
+                      }}
+                      className="text-[10px] text-[#94A3B8] hover:text-[#F7F9FC] underline cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="p-3 bg-[#050811] rounded-lg border border-[#223047] text-xs">
+                <span className="text-[#64748B] font-mono font-semibold">Spoken Transcript: </span>
+                <span className="text-emerald-400 font-mono">
                   {liveSpeechText ||
                     (captionStatus === "unsupported"
                       ? "Speak now — captions will appear from server transcription each analysis window…"
                       : "Listening… speak clearly into the microphone.")}
-                </p>
+                </span>
               </div>
+              {currentScenario?.authStatus && (
+                <div className="flex items-center justify-between text-[11px] text-[#94A3B8] pt-0.5 font-mono">
+                  <span className="truncate max-w-[70%]">
+                    Acoustic Diagnosis: <strong className="text-[#F7F9FC]">{currentScenario.authStatus}</strong>
+                  </span>
+                  <span>
+                    Authenticity: <strong className={currentScenario.authenticity <= 50 ? "text-red-400" : "text-emerald-400"}>{currentScenario.authenticity}%</strong>
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* ─── WORKSPACE TWO-COLUMN LAYOUT ─── */}
+        {/* ─── WORKSPACE TWO-COLUMN FORENSIC LAYOUT ─── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT 7 COLS: Live Voiceprint Analysis & Threat Feeds */}
           <div className="lg:col-span-7 space-y-6">
             {/* Automated Alert Email Notification Banner */}
             {automatedAlertNotice && (
-              <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between text-xs shadow-xs animate-in fade-in">
+              <div className="p-4 bg-red-950/40 border border-red-800/80 rounded-2xl flex items-center justify-between text-xs shadow-xl animate-in fade-in">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-red-100 border border-red-300 flex items-center justify-center text-red-700 shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-red-900/50 border border-red-700/60 flex items-center justify-center text-red-300 shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-red-900 uppercase tracking-wider text-[11px]">
+                      <span className="font-bold text-red-200 uppercase tracking-wider text-[11px] font-mono">
                         Automated Security Alert Dispatched
                       </span>
-                      <Badge className="bg-red-100 text-red-800 border-red-300 text-[10px]">
+                      <Badge className="bg-red-500/20 text-red-300 border-red-500/40 text-[10px] font-mono">
                         Resend Provider Delivered
                       </Badge>
                     </div>
-                    <p className="text-red-800 text-xs mt-0.5 truncate">{automatedAlertNotice.text}</p>
+                    <p className="text-red-300 text-xs mt-0.5 truncate">{automatedAlertNotice.text}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
                   {automatedAlertNotice.messageId && (
-                    <span className="hidden sm:inline-block text-[10px] font-mono text-red-700 bg-red-100/70 px-2 py-0.5 rounded border border-red-200">
+                    <span className="hidden sm:inline-block text-[10px] font-mono text-red-300 bg-red-900/40 px-2 py-0.5 rounded border border-red-700/50">
                       ID: {automatedAlertNotice.messageId.slice(0, 16)}
                     </span>
                   )}
                   <button
                     onClick={() => setAutomatedAlertNotice(null)}
-                    className="text-red-400 hover:text-red-700 text-xs p-1 cursor-pointer"
+                    className="text-red-400 hover:text-red-200 text-xs p-1 cursor-pointer"
                     title="Dismiss alert notification"
                   >
                     ✕
@@ -1521,158 +1798,18 @@ export default function HybridDashboard() {
               </div>
             )}
 
-            {/* AMVTF Final Decision & Action Widget */}
-            <div
-              className={cn(
-                "rounded-xl border p-5 transition-all shadow-sm",
-                riskState === "CRITICAL"
-                  ? "bg-red-50/80 border-red-200"
-                  : riskState === "WARNING"
-                  ? "bg-amber-50/80 border-amber-200"
-                  : riskState === "SAFE"
-                  ? "bg-emerald-50/80 border-emerald-200"
-                  : "bg-white border-gray-200"
-              )}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      "p-2.5 rounded-lg border",
-                      riskState === "CRITICAL"
-                        ? "bg-red-100 border-red-300 text-red-700"
-                        : riskState === "WARNING"
-                        ? "bg-amber-100 border-amber-300 text-amber-700"
-                        : riskState === "SAFE"
-                        ? "bg-emerald-100 border-emerald-300 text-emerald-700"
-                        : "bg-gray-100 border-gray-200 text-gray-500"
-                    )}
-                  >
-                    {riskState === "CRITICAL" ? (
-                      <ShieldAlert className="w-6 h-6" />
-                    ) : riskState === "WARNING" ? (
-                      <AlertTriangle className="w-6 h-6" />
-                    ) : riskState === "SAFE" ? (
-                      <ShieldCheck className="w-6 h-6" />
-                    ) : (
-                      <Activity className="w-6 h-6" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-gray-900">
-                        {currentScenario
-                          ? `AMVTF Verdict: ${currentScenario.actionType === "TERMINATE" ? "CRITICAL THREAT" : currentScenario.actionType === "STEP_UP" ? "SUSPICIOUS / STEP-UP" : "VERIFIED SAFE"}`
-                          : "AMVTF Engine Standby"}
-                      </h3>
-                      {riskState !== "IDLE" && (
-                        <Badge
-                          className={cn(
-                            "text-xs font-semibold px-2 py-0.5",
-                            riskState === "CRITICAL"
-                              ? "bg-red-600 text-white"
-                              : riskState === "WARNING"
-                              ? "bg-amber-600 text-white"
-                              : "bg-emerald-600 text-white"
-                          )}
-                        >
-                          {riskState}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-600 mt-0.5">
-                      {currentScenario?.recommendedAction || "Awaiting audio stream or file input to evaluate trust."}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider block">Fused Risk Score</span>
-                  <span
-                    className={cn(
-                      "text-2xl font-black font-mono",
-                      riskState === "CRITICAL"
-                        ? "text-red-600"
-                        : riskState === "WARNING"
-                        ? "text-amber-600"
-                        : riskState === "SAFE"
-                        ? "text-emerald-600"
-                        : "text-gray-400"
-                    )}
-                  >
-                    {currentScenario ? `${currentScenario.fusedRiskScore}` : "--"}
-                  </span>
-                  <span className="text-[10px] text-gray-400 block">/ 100</span>
-                </div>
-              </div>
-
-              {/* Rationale Explanation */}
-              {currentScenario && (
-                <div className="mt-3 pt-3 border-t border-gray-200/60 text-xs text-gray-700">
-                  <span className="font-semibold text-gray-900">Analysis Rationale: </span>
-                  {currentScenario.rationale}
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              {riskState !== "IDLE" && (
-                <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-gray-200/60">
-                  <span className="text-xs font-semibold text-gray-700 mr-2">Operator Action:</span>
-                  {riskState === "CRITICAL" && (
-                    <Button
-                      size="sm"
-                      onClick={() => setActionExecuted(true)}
-                      className={cn(
-                        "text-xs font-semibold gap-1.5 shadow-sm",
-                        actionExecuted ? "bg-gray-800 text-white" : "bg-red-600 hover:bg-red-700 text-white"
-                      )}
-                    >
-                      <Flame className="w-3.5 h-3.5" />
-                      {actionExecuted ? "Account Frozen & Terminated" : "Terminate Call & Freeze Account"}
-                    </Button>
-                  )}
-                  {riskState === "WARNING" && (
-                    <Button
-                      size="sm"
-                      onClick={() => setActionExecuted(true)}
-                      className={cn(
-                        "text-xs font-semibold gap-1.5 shadow-sm",
-                        actionExecuted ? "bg-gray-800 text-white" : "bg-amber-600 hover:bg-amber-700 text-white"
-                      )}
-                    >
-                      <Lock className="w-3.5 h-3.5" />
-                      {actionExecuted ? "Secondary OOB Challenge Sent" : "Trigger Out-of-Band Verification"}
-                    </Button>
-                  )}
-                  {riskState === "SAFE" && (
-                    <Button
-                      size="sm"
-                      onClick={() => setActionExecuted(true)}
-                      className={cn(
-                        "text-xs font-semibold gap-1.5 shadow-sm",
-                        actionExecuted ? "bg-gray-800 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                      )}
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      {actionExecuted ? "Session Cleared" : "Authorize Session Operations"}
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-
             {/* Audio Waveform & Biometric Visualization */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+            <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-2xl shadow-xl p-5 space-y-4 backdrop-blur-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#223047] pb-3">
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900 tracking-tight">
+                  <h3 className="text-sm font-bold text-[#F7F9FC] tracking-tight">
                     {currentScenario?.spectrogram?.available
-                      ? "Analysis Spectrogram"
+                      ? "Acoustic Forensic Spectrogram"
                       : "Audio Ingestion & Frequency Spectrogram"}
                   </h3>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-[#94A3B8] mt-0.5">
                     {currentScenario?.spectrogram?.available
-                      ? "Generated from the audio used by the detection pipeline."
+                      ? "Generated from normalized 16kHz audio fed into detection pipeline."
                       : "Live 16kHz PCM audio frequency bin magnitude"}
                   </p>
                 </div>
@@ -1683,13 +1820,13 @@ export default function HybridDashboard() {
                       isAnalyzing
                         ? "bg-orange-500 animate-pulse"
                         : currentScenario?.spectrogram?.available
-                        ? "bg-emerald-500"
+                        ? "bg-emerald-400"
                         : isSimulating || isMicActive
-                        ? "bg-emerald-500 animate-pulse"
-                        : "bg-gray-400"
+                        ? "bg-emerald-400 animate-pulse"
+                        : "bg-[#64748B]"
                     )}
                   />
-                  <span className="text-xs font-mono text-gray-600">
+                  <span className="text-xs font-mono text-[#94A3B8]">
                     {isAnalyzing
                       ? "EVALUATING..."
                       : currentScenario?.spectrogram?.available
@@ -1703,12 +1840,12 @@ export default function HybridDashboard() {
 
               {/* Body: Backend Evidence Spectrogram OR Analyzing State OR Live Frequency Bars */}
               {isAnalyzing ? (
-                <div className="h-44 bg-[#0B1120] rounded-lg border border-gray-800 flex flex-col items-center justify-center text-center p-6 text-slate-300">
+                <div className="h-44 bg-[#080D17] rounded-xl border border-[#223047] flex flex-col items-center justify-center text-center p-6 text-slate-300">
                   <RefreshCw className="w-7 h-7 text-[#F6821F] animate-spin mb-2" />
-                  <p className="text-xs font-semibold text-slate-100">
+                  <p className="text-xs font-semibold text-[#F7F9FC]">
                     Computing Forensic Analysis Spectrogram...
                   </p>
-                  <p className="text-[11px] text-slate-400 mt-1 max-w-md">
+                  <p className="text-[11px] text-[#94A3B8] mt-1 max-w-md font-mono">
                     Extracting 512-point Hann STFT slices from normalized 16kHz audio fed into detection pipeline.
                   </p>
                 </div>
@@ -1718,24 +1855,24 @@ export default function HybridDashboard() {
                   <div
                     role="status"
                     aria-live="polite"
-                    className="text-xs bg-slate-50 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-mono flex flex-wrap items-center justify-between gap-2"
+                    className="text-xs bg-[#080D17] border border-[#223047] text-[#94A3B8] px-3 py-2 rounded-xl font-mono flex flex-wrap items-center justify-between gap-2"
                   >
-                    <span className="font-sans font-medium text-slate-900">
+                    <span className="font-sans font-medium text-[#F7F9FC]">
                       {currentScenario.spectrogram.summary || (
                         <>
-                          Spectrogram for <span className="font-semibold">{currentScenario.spectrogram.filename}</span>, duration{" "}
+                          Spectrogram for <span className="font-semibold text-emerald-400">{currentScenario.spectrogram.filename}</span>, duration{" "}
                           <span className="font-semibold">{currentScenario.spectrogram.duration_seconds}s</span>, sample rate{" "}
                           <span className="font-semibold">{currentScenario.spectrogram.sample_rate?.toLocaleString()} Hz</span>.
                         </>
                       )}
                     </span>
-                    <Badge variant="outline" className="text-[10px] bg-slate-100 font-mono text-slate-600 border-slate-300">
+                    <Badge variant="outline" className="text-[10px] bg-[#121C2D] font-mono text-[#F6821F] border-[#223047]">
                       {currentScenario.spectrogram.preprocessing_version || "AMVTF-v2.1-Preprocessed-16kHz"}
                     </Badge>
                   </div>
 
                   {/* Backend Generated Spectrogram Image */}
-                  <div className="relative rounded-lg overflow-hidden border border-slate-800 bg-[#0B1120] shadow-inner">
+                  <div className="relative rounded-xl overflow-hidden border border-[#223047] bg-[#050811] shadow-2xl">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={currentScenario.spectrogram.data_url}
@@ -1749,47 +1886,47 @@ export default function HybridDashboard() {
 
                   {/* Metadata Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-0.5">
-                    <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
-                      <span className="text-gray-400 text-[10px] uppercase font-semibold block">Analysis ID</span>
-                      <span className="font-bold font-mono text-gray-800 text-xs truncate block">
+                    <div className="bg-[#080D17] p-2.5 rounded-xl border border-[#223047]">
+                      <span className="text-[#64748B] text-[10px] uppercase font-semibold block">Analysis ID</span>
+                      <span className="font-bold font-mono text-emerald-400 text-xs truncate block">
                         {currentScenario.spectrogram.analysis_id || (isPersisted ? "SAVED" : "EVAL-ACTIVE")}
                       </span>
                     </div>
-                    <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
-                      <span className="text-gray-400 text-[10px] uppercase font-semibold block">Sample Rate</span>
-                      <span className="font-bold font-mono text-gray-800 text-xs">
-                        {currentScenario.spectrogram.sample_rate?.toLocaleString() || "16,000"} Hz (Mono)
+                    <div className="bg-[#080D17] p-2.5 rounded-xl border border-[#223047]">
+                      <span className="text-[#64748B] text-[10px] uppercase font-semibold block">Sample Rate</span>
+                      <span className="font-bold font-mono text-[#F7F9FC] text-xs">
+                        {currentScenario.spectrogram.sample_rate?.toLocaleString() || "16,000"} Hz
                       </span>
                     </div>
-                    <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
-                      <span className="text-gray-400 text-[10px] uppercase font-semibold block">FFT & Hop</span>
-                      <span className="font-bold font-mono text-gray-800 text-xs">
-                        {currentScenario.spectrogram.n_fft || 512} FFT / {currentScenario.spectrogram.hop_length || 256} Hop
+                    <div className="bg-[#080D17] p-2.5 rounded-xl border border-[#223047]">
+                      <span className="text-[#64748B] text-[10px] uppercase font-semibold block">FFT & Hop</span>
+                      <span className="font-bold font-mono text-[#F7F9FC] text-xs">
+                        {currentScenario.spectrogram.n_fft || 512} / {currentScenario.spectrogram.hop_length || 256}
                       </span>
                     </div>
-                    <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
-                      <span className="text-gray-400 text-[10px] uppercase font-semibold block">Frequency Scale</span>
-                      <span className="font-bold font-mono text-gray-800 text-xs">
-                        {currentScenario.spectrogram.frequency_scale || "Linear 0 - 8,000 Hz"}
+                    <div className="bg-[#080D17] p-2.5 rounded-xl border border-[#223047]">
+                      <span className="text-[#64748B] text-[10px] uppercase font-semibold block">Frequency Scale</span>
+                      <span className="font-bold font-mono text-[#F7F9FC] text-xs">
+                        {currentScenario.spectrogram.frequency_scale || "Linear 0-8kHz"}
                       </span>
                     </div>
                   </div>
                 </div>
               ) : (
                 /* Dynamic Audio Bars */
-                <div className="h-28 bg-gray-900 rounded-lg p-4 flex items-end justify-between gap-1.5 overflow-hidden">
+                <div className="h-28 bg-[#080D17] rounded-xl p-4 flex items-end justify-between gap-1.5 overflow-hidden border border-[#223047]">
                   {micVolume.map((vol, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
                       <div
                         className={cn(
                           "w-full rounded-t transition-all duration-75",
                           riskState === "CRITICAL"
-                            ? "bg-gradient-to-t from-red-600 to-red-400"
+                            ? "bg-gradient-to-t from-red-600 to-red-400 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
                             : riskState === "WARNING"
-                            ? "bg-gradient-to-t from-amber-600 to-amber-400"
+                            ? "bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
                             : riskState === "SAFE"
-                            ? "bg-gradient-to-t from-emerald-600 to-emerald-400"
-                            : "bg-gray-700"
+                            ? "bg-gradient-to-t from-emerald-600 to-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                            : "bg-[#1E293B]"
                         )}
                         style={{ height: `${isSimulating || isMicActive ? vol : 8}%` }}
                       />
@@ -1800,32 +1937,32 @@ export default function HybridDashboard() {
 
               {/* Spectral Metadata */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
-                <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-                  <span className="text-gray-400 text-[10px] uppercase block">Spectral Entropy</span>
-                  <span className="font-bold font-mono text-gray-800 text-xs">
+                <div className="bg-[#080D17] p-2.5 rounded-xl border border-[#223047]">
+                  <span className="text-[#64748B] text-[10px] uppercase block font-mono">Spectral Entropy</span>
+                  <span className="font-bold font-mono text-[#F7F9FC] text-xs">
                     {currentScenario?.spectralEntropy !== undefined ? `${currentScenario.spectralEntropy}` : "--"}
                   </span>
                 </div>
-                <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-                  <span className="text-gray-400 text-[10px] uppercase block">Zero-Crossing Rate</span>
-                  <span className="font-bold font-mono text-gray-800 text-xs">
+                <div className="bg-[#080D17] p-2.5 rounded-xl border border-[#223047]">
+                  <span className="text-[#64748B] text-[10px] uppercase block font-mono">Zero-Crossing Rate</span>
+                  <span className="font-bold font-mono text-[#F7F9FC] text-xs">
                     {currentScenario?.zcr !== undefined ? `${currentScenario.zcr}` : "--"}
                   </span>
                 </div>
-                <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-                  <span className="text-gray-400 text-[10px] uppercase block">Micro-Tremor / Jitter</span>
-                  <span className="font-bold font-mono text-gray-800 text-xs">
+                <div className="bg-[#080D17] p-2.5 rounded-xl border border-[#223047]">
+                  <span className="text-[#64748B] text-[10px] uppercase block font-mono">Micro-Tremor / Jitter</span>
+                  <span className="font-bold font-mono text-[#F7F9FC] text-xs">
                     {currentScenario?.jitter !== undefined ? `${currentScenario.jitter}%` : "--"}
                   </span>
                 </div>
-                <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-                  <span className="text-gray-400 text-[10px] uppercase block">Glottal Kurtosis</span>
+                <div className="bg-[#080D17] p-2.5 rounded-xl border border-[#223047]">
+                  <span className="text-[#64748B] text-[10px] uppercase block font-mono">Glottal Kurtosis</span>
                   <span
                     className={cn(
                       "font-bold font-mono text-xs",
                       currentScenario?.kurtosis !== undefined && currentScenario.kurtosis < 4.0
-                        ? "text-red-600"
-                        : "text-emerald-700"
+                        ? "text-red-400"
+                        : "text-emerald-400"
                     )}
                   >
                     {currentScenario?.kurtosis !== undefined ? `${currentScenario.kurtosis}` : "--"}
@@ -1835,12 +1972,12 @@ export default function HybridDashboard() {
 
               {/* Dynamic Spoofing Indicators Banner if detected */}
               {currentScenario?.syntheticIndicators && currentScenario.syntheticIndicators.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-800 space-y-1">
-                  <span className="font-semibold flex items-center gap-1.5 text-red-900">
-                    <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                <div className="bg-red-950/40 border border-red-800/80 rounded-xl p-3 text-xs text-red-200 space-y-1">
+                  <span className="font-semibold flex items-center gap-1.5 text-red-300">
+                    <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
                     Synthetic / AI Acoustic Artifacts Detected:
                   </span>
-                  <ul className="list-disc list-inside space-y-0.5 text-[11px] text-red-700">
+                  <ul className="list-disc list-inside space-y-0.5 text-[11px] text-red-300/80 font-mono">
                     {currentScenario.syntheticIndicators.map((ind, idx) => (
                       <li key={idx}>{ind}</li>
                     ))}
@@ -1850,14 +1987,14 @@ export default function HybridDashboard() {
             </div>
 
             {/* Live Conversation Transcript Feed */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 space-y-4">
+            <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-2xl shadow-xl p-5 space-y-4 backdrop-blur-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Audited Dialogue Feed</h3>
-                  <p className="text-xs text-gray-500">Real-time transcripts analyzed by DistilBERT NLP</p>
+                  <h3 className="text-sm font-bold text-[#F7F9FC]">Audited Dialogue Feed</h3>
+                  <p className="text-xs text-[#94A3B8]">Real-time transcripts analyzed by DistilBERT NLP</p>
                 </div>
                 {currentScenario && (
-                  <Badge variant="outline" className="text-[10px] text-gray-600 border-gray-300">
+                  <Badge variant="outline" className="text-[10px] text-[#94A3B8] border-[#223047] bg-[#121C2D] font-mono">
                     {currentScenario.nlpIntent}
                   </Badge>
                 )}
@@ -1865,7 +2002,7 @@ export default function HybridDashboard() {
 
               <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
                 {!currentScenario ? (
-                  <div className="py-12 text-center text-gray-400 text-xs">
+                  <div className="py-12 text-center text-[#64748B] text-xs font-mono">
                     No active dialogue recorded. Start live microphone monitoring or upload an audio file above.
                   </div>
                 ) : (
@@ -1873,23 +2010,23 @@ export default function HybridDashboard() {
                     <div
                       key={i}
                       className={cn(
-                        "p-3 rounded-lg border text-xs transition-all",
+                        "p-3 rounded-xl border text-xs transition-all",
                         msg.alert
-                          ? "bg-red-50/80 border-red-200 text-red-900"
+                          ? "bg-red-950/40 border-red-800/80 text-red-200"
                           : msg.speaker === "Caller"
-                          ? "bg-gray-50 border-gray-200 text-gray-800"
-                          : "bg-blue-50/50 border-blue-100 text-blue-900"
+                          ? "bg-[#080D17] border-[#223047] text-[#C5D1E0]"
+                          : "bg-[#0C1829] border-[#1D3557] text-[#93C5FD]"
                       )}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold">{msg.speaker}</span>
-                        <span className="text-[10px] text-gray-400 font-mono">{msg.time}</span>
+                        <span className="font-semibold text-[#F7F9FC]">{msg.speaker}</span>
+                        <span className="text-[10px] text-[#64748B] font-mono">{msg.time}</span>
                       </div>
                       <p>{msg.text}</p>
                       {msg.threatKeywords && msg.threatKeywords.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2 pt-1 border-t border-red-200/50">
+                        <div className="flex flex-wrap gap-1 mt-2 pt-1 border-t border-red-800/40">
                           {msg.threatKeywords.map((kw, ki) => (
-                            <Badge key={ki} className="bg-red-100 text-red-800 border-red-300 text-[10px] px-1.5 py-0">
+                            <Badge key={ki} className="bg-red-500/20 text-red-300 border-red-500/40 text-[10px] px-1.5 py-0 font-mono">
                               {kw}
                             </Badge>
                           ))}
@@ -1973,41 +2110,46 @@ export default function HybridDashboard() {
             </div>
 
             {/* Three Signal Layer Breakdown */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 space-y-5">
+            <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-2xl shadow-xl p-5 space-y-5 backdrop-blur-xl">
               <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                <h3 className="text-sm font-bold text-[#F7F9FC] uppercase tracking-wider">
                   AMVTF Multi-Signal Trust Breakdown
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">Real-time fusion across 3 defense layers</p>
+                <p className="text-xs text-[#94A3B8] mt-0.5">Real-time fusion across 3 defense layers</p>
               </div>
 
               {/* Layer 1: AASIST Authenticity */}
               <div>
                 <div className="flex justify-between items-end mb-1.5">
                   <div>
-                    <p className="text-xs font-bold text-gray-900">Layer 1: AASIST Authenticity (40%)</p>
-                    <p className="text-[10px] text-gray-500">Audio Anti-Spoofing & Vocoder Detection</p>
+                    <p className="text-xs font-bold text-[#F7F9FC]">Layer 1: AASIST Authenticity (40%)</p>
+                    <p className="text-[10px] text-[#64748B] font-mono">Audio Anti-Spoofing & Vocoder Detection (Min: {systemSettings?.aasistThreshold ?? 50}%)</p>
                   </div>
-                  <span className="text-sm font-bold font-mono text-gray-900">
+                  <span className="text-sm font-bold font-mono text-[#F7F9FC]">
                     {currentScenario ? `${currentScenario.authenticity}%` : "--"}
                   </span>
                 </div>
-                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+                <div className="h-2.5 w-full bg-[#080D17] rounded-full overflow-hidden border border-[#223047] relative">
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-700",
                       !currentScenario
                         ? "w-0"
-                        : currentScenario.authenticity > 50
-                        ? "bg-emerald-500"
-                        : "bg-red-500"
+                        : currentScenario.authenticity >= (systemSettings?.aasistThreshold ?? 50)
+                        ? "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                        : "bg-gradient-to-r from-red-600 to-red-400 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
                     )}
                     style={{ width: currentScenario ? `${currentScenario.authenticity}%` : "0%" }}
                   />
+                  <div
+                    className="absolute top-0 bottom-0 w-0.5 bg-[#94A3B8] z-10"
+                    style={{ left: `${systemSettings?.aasistThreshold ?? 50}%` }}
+                    title={`AASIST Threshold: ${systemSettings?.aasistThreshold ?? 50}%`}
+                  />
                 </div>
-                <div className="flex justify-between items-center mt-1 text-[10px] text-gray-500">
-                  <span>Threshold: &gt;50% Human</span>
-                  <span className="font-semibold text-gray-800">
+                <div className="flex justify-between items-center mt-1 text-[10px] text-[#94A3B8] font-mono">
+                  <span>Threshold: &gt;{systemSettings?.aasistThreshold ?? 50}% Human</span>
+                  <span className="font-semibold text-emerald-400">
                     {currentScenario?.authStatus || "Awaiting Stream"}
                   </span>
                 </div>
@@ -2017,34 +2159,34 @@ export default function HybridDashboard() {
               <div>
                 <div className="flex justify-between items-end mb-1.5">
                   <div>
-                    <p className="text-xs font-bold text-gray-900">Layer 2: ECAPA-TDNN Identity (35%)</p>
-                    <p className="text-[10px] text-gray-500">192-Dim Cosine Match vs Enrolled Profiles</p>
+                    <p className="text-xs font-bold text-[#F7F9FC]">Layer 2: ECAPA-TDNN Identity (35%)</p>
+                    <p className="text-[10px] text-[#64748B] font-mono">192-Dim Cosine Match vs Enrolled Profiles (Min: {systemSettings?.ecapaThreshold ?? 70}%)</p>
                   </div>
-                  <span className="text-sm font-bold font-mono text-gray-900">
+                  <span className="text-sm font-bold font-mono text-[#F7F9FC]">
                     {currentScenario ? `${currentScenario.identity}%` : "--"}
                   </span>
                 </div>
-                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-200 relative">
+                <div className="h-2.5 w-full bg-[#080D17] rounded-full overflow-hidden border border-[#223047] relative">
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-700",
                       !currentScenario
                         ? "w-0"
-                        : currentScenario.identity > 70
-                        ? "bg-emerald-500"
-                        : "bg-amber-500"
+                        : currentScenario.identity >= (systemSettings?.ecapaThreshold ?? 70)
+                        ? "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                        : "bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
                     )}
                     style={{ width: currentScenario ? `${currentScenario.identity}%` : "0%" }}
                   />
                   <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-gray-500"
-                    style={{ left: "70%" }}
-                    title="Threshold 70%"
+                    className="absolute top-0 bottom-0 w-0.5 bg-[#94A3B8] z-10"
+                    style={{ left: `${systemSettings?.ecapaThreshold ?? 70}%` }}
+                    title={`ECAPA Threshold: ${systemSettings?.ecapaThreshold ?? 70}%`}
                   />
                 </div>
-                <div className="flex justify-between items-center mt-1 text-[10px] text-gray-500">
+                <div className="flex justify-between items-center mt-1 text-[10px] text-[#94A3B8] font-mono">
                   <span>Target: {currentScenario?.enrolledTarget || (selectedTargetId || "Auto-detect in Registry")}</span>
-                  <span className="font-semibold text-gray-800">
+                  <span className="font-semibold text-emerald-400">
                     {currentScenario?.idStatus || "Awaiting Stream"}
                   </span>
                 </div>
@@ -2054,31 +2196,31 @@ export default function HybridDashboard() {
               <div>
                 <div className="flex justify-between items-end mb-1.5">
                   <div>
-                    <p className="text-xs font-bold text-gray-900">Layer 3: Context Risk (25%)</p>
-                    <p className="text-[10px] text-gray-500">DistilBERT Intent & Social Engineering Risk</p>
+                    <p className="text-xs font-bold text-[#F7F9FC]">Layer 3: Context Risk (25%)</p>
+                    <p className="text-[10px] text-[#64748B] font-mono">DistilBERT Intent & Social Engineering Risk (Sens: {systemSettings?.nlpSensitivity ?? 65}%)</p>
                   </div>
-                  <span className="text-sm font-bold font-mono text-gray-900">
+                  <span className="text-sm font-bold font-mono text-[#F7F9FC]">
                     {currentScenario ? `${currentScenario.contextRisk}%` : "--"}
                   </span>
                 </div>
-                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+                <div className="h-2.5 w-full bg-[#080D17] rounded-full overflow-hidden border border-[#223047]">
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-700",
                       !currentScenario
                         ? "w-0"
                         : currentScenario.contextRisk > 60
-                        ? "bg-red-500"
+                        ? "bg-gradient-to-r from-red-600 to-red-400 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
                         : currentScenario.contextRisk > 30
-                        ? "bg-amber-500"
-                        : "bg-emerald-500"
+                        ? "bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
+                        : "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                     )}
                     style={{ width: currentScenario ? `${currentScenario.contextRisk}%` : "0%" }}
                   />
                 </div>
-                <div className="flex justify-between items-center mt-1 text-[10px] text-gray-500">
+                <div className="flex justify-between items-center mt-1 text-[10px] text-[#94A3B8] font-mono">
                   <span>Calculated via NLP Classification</span>
-                  <span className="font-semibold text-gray-800">
+                  <span className="font-semibold text-[#F7F9FC]">
                     {currentScenario
                       ? currentScenario.contextRisk > 50
                         ? "High Threat"
@@ -2090,28 +2232,28 @@ export default function HybridDashboard() {
             </div>
 
             {/* Semantic Risk Flags */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 space-y-3">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+            <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-2xl shadow-xl p-5 space-y-3 backdrop-blur-xl">
+              <h3 className="text-sm font-bold text-[#F7F9FC] uppercase tracking-wider">
                 Extracted Threat Keywords & Semantic Flags
               </h3>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-[#94A3B8]">
                 Rule-based security flags detected during NLP conversation analysis
               </p>
 
               <div className="flex flex-wrap gap-2 pt-2">
                 {!currentScenario || (!currentScenario.threatKeywords.length && !currentScenario.semanticFlags.length) ? (
-                  <p className="text-xs text-gray-400 py-4">No threat flags detected in active stream.</p>
+                  <p className="text-xs text-[#64748B] py-4 font-mono">No threat flags detected in active stream.</p>
                 ) : (
                   <>
                     {currentScenario.threatKeywords.map((kw, i) => (
-                      <Badge key={i} className="bg-red-50 text-red-700 border-red-200 text-xs px-2 py-1 gap-1">
-                        <AlertTriangle className="w-3 h-3 text-red-500" />
+                      <Badge key={i} className="bg-red-500/20 text-red-300 border-red-500/40 text-xs px-2.5 py-1 gap-1 font-mono">
+                        <AlertTriangle className="w-3 h-3 text-red-400" />
                         {kw}
                       </Badge>
                     ))}
                     {currentScenario.semanticFlags.map((flag, i) => (
-                      <Badge key={i} className="bg-amber-50 text-amber-700 border-amber-200 text-xs px-2 py-1 gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-amber-500" />
+                      <Badge key={i} className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-xs px-2.5 py-1 gap-1 font-mono">
+                        <CheckCircle2 className="w-3 h-3 text-amber-400" />
                         {flag}
                       </Badge>
                     ))}

@@ -28,9 +28,9 @@ import { cn } from "@/lib/utils";
 import { getCalls, deleteCall, clearAllCalls, CallRecord } from "@/lib/api";
 
 const verdictConfig = {
-  SAFE: { label: "Safe", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", icon: ShieldCheck },
-  WARNING: { label: "Suspicious", color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200", icon: MessageSquareWarning },
-  CRITICAL: { label: "Deepfake", color: "text-red-700", bg: "bg-red-50", border: "border-red-200", icon: ShieldAlert },
+  SAFE: { label: "Safe", color: "text-emerald-400", bg: "bg-emerald-950/60", border: "border-emerald-700/60", icon: ShieldCheck },
+  WARNING: { label: "Suspicious", color: "text-amber-400", bg: "bg-amber-950/60", border: "border-amber-700/60", icon: MessageSquareWarning },
+  CRITICAL: { label: "Deepfake", color: "text-red-400", bg: "bg-red-950/60", border: "border-red-700/60", icon: ShieldAlert },
 };
 
 export default function CallHistoryPage() {
@@ -104,65 +104,68 @@ export default function CallHistoryPage() {
 
   return (
     <>
-      {/* Top Navbar */}
-      <nav className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 z-20 sticky top-0">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Link href="/" className="hover:text-[#F6821F]">VoxGuard SOC</Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-gray-900 font-medium">Call Threat Audit Trail</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="relative hidden lg:block">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search calls in database..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-1.5 bg-gray-100 border-transparent focus:bg-white border focus:border-[#F6821F] rounded-md text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#F6821F] w-64 transition-all"
-            />
-          </div>
-          <button
-            onClick={fetchRealCalls}
-            className="text-gray-500 hover:text-gray-900 p-1.5 rounded-md hover:bg-gray-100"
-            title="Refresh from database"
-          >
-            <RefreshCw className={cn("w-4 h-4", loading ? "animate-spin text-[#F6821F]" : "")} />
-          </button>
-          <button className="text-gray-500 hover:text-gray-900 relative">
-            <Bell className="w-5 h-5" />
-          </button>
-        </div>
-      </nav>
-
       {/* Page Header */}
-      <header className="bg-white border-b border-gray-200 py-6 px-6 sm:px-10 shadow-sm">
+      <header className="bg-[#0D1422]/90 border-b border-[#223047] py-6 px-6 sm:px-10 backdrop-blur-md sticky top-0 z-10 shadow-lg">
         <div className="max-w-[1400px] mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Call Threat Audit Trail</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Real SQLite database records analyzed by the AMVTF multi-signal fusion engine
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-[#F6821F]/10 text-[#F6821F] border border-[#F6821F]/30">
+                  <Activity className="w-3 h-3 animate-pulse" /> Telemetry Ledger
+                </span>
+                <span className="text-[#64748B] text-xs font-mono">•</span>
+                <span className="text-[#94A3B8] text-xs font-mono">SQLite Session Store</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#F7F9FC] tracking-tight">
+                Call Threat Audit Trail
+              </h1>
+              <p className="text-xs sm:text-sm text-[#94A3B8] mt-1">
+                Forensically indexed audio sessions analyzed by the AMVTF multi-signal fusion engine
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
+                <input
+                  type="text"
+                  placeholder="Search caller, ID, verdict..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-4 py-1.5 bg-[#121C2D] border border-[#223047] focus:border-[#F6821F] rounded-lg text-xs sm:text-sm text-[#F7F9FC] placeholder-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#F6821F] w-48 sm:w-64 transition-all"
+                />
+              </div>
+
+              <Button
+                onClick={fetchRealCalls}
+                variant="outline"
+                size="sm"
+                className="bg-[#121C2D] border-[#223047] text-[#94A3B8] hover:text-[#F7F9FC] hover:border-[#384D6B] h-9 px-3 gap-1.5"
+                title="Refresh from database"
+              >
+                <RefreshCw className={cn("w-3.5 h-3.5", loading ? "animate-spin text-[#F6821F]" : "")} />
+                <span className="hidden sm:inline text-xs">Sync</span>
+              </Button>
+
               {calls.length > 0 && (
                 <Button
                   onClick={handleClearAll}
                   variant="outline"
                   size="sm"
-                  className="gap-1 text-xs text-red-600 hover:bg-red-50 hover:border-red-300"
+                  className="gap-1.5 text-xs bg-red-950/30 text-red-400 border-red-800/50 hover:bg-red-900/40 hover:text-red-300 h-9"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Clear All History
+                  <Trash2 className="w-3.5 h-3.5" /> Clear All
                 </Button>
               )}
+
               <Button
                 onClick={handleExportCSV}
                 disabled={calls.length === 0}
                 variant="outline"
-                className="gap-2 text-sm hover:border-[#F6821F] hover:text-[#F6821F] cursor-pointer"
+                className="gap-2 text-xs sm:text-sm bg-[#121C2D] border-[#223047] text-[#F7F9FC] hover:border-[#F6821F] hover:text-[#F6821F] h-9 cursor-pointer"
               >
-                <Download className="w-4 h-4" /> Export CSV ({calls.length})
+                <Download className="w-4 h-4 text-[#F6821F]" /> Export CSV ({calls.length})
               </Button>
             </div>
           </div>
@@ -172,48 +175,60 @@ export default function CallHistoryPage() {
       <main className="flex-1 w-full max-w-[1400px] mx-auto p-6 sm:p-10 space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+          <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl p-4 shadow-xl">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-100 rounded-lg"><Phone className="w-5 h-5 text-gray-600" /></div>
+              <div className="p-2.5 bg-[#121C2D] border border-[#223047] rounded-lg">
+                <Phone className="w-5 h-5 text-[#94A3B8]" />
+              </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-xs text-gray-500">Database Records</p>
+                <p className="text-2xl font-extrabold text-[#F7F9FC] font-mono tracking-tight">{stats.total}</p>
+                <p className="text-[11px] text-[#94A3B8] uppercase tracking-wider font-semibold">Indexed Calls</p>
               </div>
             </div>
           </div>
-          <div className="bg-white border border-emerald-200 rounded-lg p-4 shadow-sm">
+
+          <div className="cyber-panel bg-[#0D1422]/90 border border-emerald-900/40 rounded-xl p-4 shadow-xl">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-50 rounded-lg"><ShieldCheck className="w-5 h-5 text-emerald-600" /></div>
+              <div className="p-2.5 bg-emerald-950/50 border border-emerald-800/40 rounded-lg">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              </div>
               <div>
-                <p className="text-2xl font-bold text-emerald-700">{stats.safe}</p>
-                <p className="text-xs text-gray-500">Verified Safe</p>
+                <p className="text-2xl font-extrabold text-emerald-400 font-mono tracking-tight">{stats.safe}</p>
+                <p className="text-[11px] text-emerald-500/80 uppercase tracking-wider font-semibold">Verified Safe</p>
               </div>
             </div>
           </div>
-          <div className="bg-white border border-amber-200 rounded-lg p-4 shadow-sm">
+
+          <div className="cyber-panel bg-[#0D1422]/90 border border-amber-900/40 rounded-xl p-4 shadow-xl">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-50 rounded-lg"><MessageSquareWarning className="w-5 h-5 text-amber-600" /></div>
+              <div className="p-2.5 bg-amber-950/50 border border-amber-800/40 rounded-lg">
+                <MessageSquareWarning className="w-5 h-5 text-amber-400" />
+              </div>
               <div>
-                <p className="text-2xl font-bold text-amber-700">{stats.warning}</p>
-                <p className="text-xs text-gray-500">Suspicious</p>
+                <p className="text-2xl font-extrabold text-amber-400 font-mono tracking-tight">{stats.warning}</p>
+                <p className="text-[11px] text-amber-500/80 uppercase tracking-wider font-semibold">Suspicious</p>
               </div>
             </div>
           </div>
-          <div className="bg-white border border-red-200 rounded-lg p-4 shadow-sm">
+
+          <div className="cyber-panel bg-[#0D1422]/90 border border-red-900/40 rounded-xl p-4 shadow-xl">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-50 rounded-lg"><ShieldAlert className="w-5 h-5 text-red-600" /></div>
+              <div className="p-2.5 bg-red-950/50 border border-red-800/40 rounded-lg">
+                <ShieldAlert className="w-5 h-5 text-red-400" />
+              </div>
               <div>
-                <p className="text-2xl font-bold text-red-700">{stats.critical}</p>
-                <p className="text-xs text-gray-500">Deepfakes Flagged</p>
+                <p className="text-2xl font-extrabold text-red-400 font-mono tracking-tight">{stats.critical}</p>
+                <p className="text-[11px] text-red-500/80 uppercase tracking-wider font-semibold">Deepfakes Flagged</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 flex flex-wrap items-center gap-3">
-          <Filter className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700 mr-2">Filter:</span>
+        <div className="bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-3 backdrop-blur-md">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mr-2 font-mono">
+            <Filter className="w-3.5 h-3.5 text-[#F6821F]" /> Filter:
+          </div>
           {(["ALL", "SAFE", "WARNING", "CRITICAL"] as const).map((v) => (
             <Button
               key={v}
@@ -221,62 +236,65 @@ export default function CallHistoryPage() {
               size="sm"
               onClick={() => setFilterVerdict(v)}
               className={cn(
-                "text-xs font-medium rounded-md transition-all cursor-pointer",
+                "text-xs font-medium rounded-lg transition-all cursor-pointer h-8 px-3 border",
                 filterVerdict === v
                   ? v === "ALL"
-                    ? "bg-gray-900 text-white border-gray-900"
+                    ? "bg-[#F6821F] text-white border-[#F6821F] shadow-sm shadow-[#F6821F]/20"
                     : v === "SAFE"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-500"
+                    ? "bg-emerald-950/60 text-emerald-300 border-emerald-600 shadow-sm shadow-emerald-500/20"
                     : v === "WARNING"
-                    ? "bg-amber-50 text-amber-700 border-amber-500"
-                    : "bg-red-50 text-red-700 border-red-500"
-                  : ""
+                    ? "bg-amber-950/60 text-amber-300 border-amber-600 shadow-sm shadow-amber-500/20"
+                    : "bg-red-950/60 text-red-300 border-red-600 shadow-sm shadow-red-500/20"
+                  : "bg-[#121C2D] text-[#94A3B8] border-[#223047] hover:text-[#F7F9FC] hover:border-[#384D6B]"
               )}
             >
               {v === "ALL" ? "All Calls" : verdictConfig[v].label}
             </Button>
           ))}
           <div className="flex-1" />
-          <span className="text-xs text-gray-500">{calls.length} database entries</span>
+          <span className="text-xs font-mono text-[#64748B]">{calls.length} database entries</span>
         </div>
 
         {/* Call Table */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-2xl overflow-hidden backdrop-blur-md">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                    <span className="flex items-center gap-1">ID <ArrowUpDown className="w-3 h-3 text-gray-400" /></span>
+                <tr className="bg-[#080D17] border-b border-[#223047]">
+                  <th className="text-left py-3.5 px-4 font-mono text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">
+                    <span className="flex items-center gap-1">ID <ArrowUpDown className="w-3 h-3 text-[#64748B]" /></span>
                   </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Caller</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Agent</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Timestamp</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Duration</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Authenticity</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Identity</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Verdict</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Actions</th>
+                  <th className="text-left py-3.5 px-4 font-mono text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">Caller</th>
+                  <th className="text-left py-3.5 px-4 font-mono text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">Agent</th>
+                  <th className="text-left py-3.5 px-4 font-mono text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">Timestamp</th>
+                  <th className="text-left py-3.5 px-4 font-mono text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">Duration</th>
+                  <th className="text-left py-3.5 px-4 font-mono text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">Authenticity</th>
+                  <th className="text-left py-3.5 px-4 font-mono text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">Identity</th>
+                  <th className="text-left py-3.5 px-4 font-mono text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">Verdict</th>
+                  <th className="text-right py-3.5 px-4 font-mono text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#223047]/60">
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-gray-400">
-                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#F6821F]" />
-                      Querying call audit records from SQLite...
+                    <td colSpan={9} className="py-16 text-center text-[#94A3B8]">
+                      <RefreshCw className="w-7 h-7 animate-spin mx-auto mb-3 text-[#F6821F]" />
+                      <p className="text-sm font-medium text-[#F7F9FC]">Querying call audit records from SQLite...</p>
+                      <p className="text-xs text-[#64748B] mt-1 font-mono">Synchronizing state with AMVTF session store</p>
                     </td>
                   </tr>
                 ) : calls.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-16 text-center">
-                      <PhoneCall className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                      <p className="text-base font-semibold text-gray-800">No Call Records Found</p>
-                      <p className="text-xs text-gray-500 mt-1 mb-4">
+                    <td colSpan={9} className="py-20 text-center">
+                      <div className="w-12 h-12 rounded-xl bg-[#121C2D] border border-[#223047] flex items-center justify-center mx-auto mb-3">
+                        <PhoneCall className="w-6 h-6 text-[#64748B]" />
+                      </div>
+                      <p className="text-base font-bold text-[#F7F9FC]">No Call Records Found</p>
+                      <p className="text-xs text-[#94A3B8] mt-1 mb-5 max-w-sm mx-auto">
                         No audio sessions have been analyzed or logged in the database yet.
                       </p>
                       <Link href="/">
-                        <Button size="sm" className="bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs gap-1.5">
+                        <Button size="sm" className="bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs font-semibold gap-2 shadow-lg shadow-[#F6821F]/20 cursor-pointer">
                           <Activity className="w-3.5 h-3.5" /> Launch Live Analysis
                         </Button>
                       </Link>
@@ -303,40 +321,40 @@ export default function CallHistoryPage() {
                       <Fragment key={call.id}>
                         <tr
                           className={cn(
-                            "border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer",
-                            isSelected ? "bg-orange-50/60 font-medium" : ""
+                            "hover:bg-[#121C2D]/70 transition-colors cursor-pointer",
+                            isSelected ? "bg-[#F6821F]/10 border-l-2 border-l-[#F6821F]" : ""
                           )}
                           onClick={() => setSelectedCall(isSelected ? null : call)}
                         >
-                          <td className="py-3 px-4 font-mono text-xs text-gray-500">{call.id}</td>
-                          <td className="py-3 px-4 font-medium text-gray-900">{call.caller}</td>
-                          <td className="py-3 px-4 text-gray-600">{call.agent}</td>
-                          <td className="py-3 px-4 text-gray-600">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-3 h-3 text-gray-400" />
+                          <td className="py-3.5 px-4 font-mono text-xs text-[#64748B]">{call.id}</td>
+                          <td className="py-3.5 px-4 font-semibold text-[#F7F9FC]">{call.caller}</td>
+                          <td className="py-3.5 px-4 text-xs text-[#94A3B8]">{call.agent}</td>
+                          <td className="py-3.5 px-4 text-xs text-[#94A3B8]">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3 h-3 text-[#64748B]" />
                               <span>{call.date}</span>
-                              <Clock className="w-3 h-3 text-gray-400 ml-1" />
+                              <Clock className="w-3 h-3 text-[#64748B] ml-1" />
                               <span>{call.time}</span>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-gray-600">{call.duration}</td>
-                          <td className="py-3 px-4">
-                            <span className={cn("font-bold", call.authenticity > 50 ? "text-emerald-700" : "text-red-700")}>
+                          <td className="py-3.5 px-4 text-xs font-mono text-[#94A3B8]">{call.duration}</td>
+                          <td className="py-3.5 px-4">
+                            <span className={cn("font-bold font-mono text-xs", call.authenticity > 50 ? "text-emerald-400" : "text-red-400")}>
                               {call.authenticity}%
                             </span>
                           </td>
-                          <td className="py-3 px-4">
-                            <span className={cn("font-bold", call.identity > 70 ? "text-emerald-700" : "text-amber-700")}>
+                          <td className="py-3.5 px-4">
+                            <span className={cn("font-bold font-mono text-xs", call.identity > 70 ? "text-emerald-400" : "text-amber-400")}>
                               {call.identity}%
                             </span>
                           </td>
-                          <td className="py-3 px-4">
-                            <Badge className={cn("gap-1 font-medium text-xs", v.bg, v.color, v.border)}>
+                          <td className="py-3.5 px-4">
+                            <Badge className={cn("gap-1 font-medium text-[11px] border shadow-xs", v.bg, v.color, v.border)}>
                               <Icon className="w-3 h-3" />
                               {v.label}
                             </Badge>
                           </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               <Button
                                 variant="outline"
@@ -349,7 +367,7 @@ export default function CallHistoryPage() {
                                   "text-xs gap-1.5 h-8 px-2.5 font-medium transition-all shadow-sm cursor-pointer",
                                   isSelected
                                     ? "bg-[#F6821F] text-white border-[#F6821F]"
-                                    : "bg-orange-50 text-[#F6821F] border-orange-200 hover:bg-[#F6821F] hover:text-white"
+                                    : "bg-[#121C2D] text-[#F6821F] border-[#F6821F]/40 hover:bg-[#F6821F] hover:text-white"
                                 )}
                                 title={isSelected ? "Close Spectrogram Evidence" : "Inspect Spectrogram & Forensic Evidence"}
                               >
@@ -360,7 +378,7 @@ export default function CallHistoryPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => handleDeleteCall(call.id, e)}
-                                className="text-gray-400 hover:text-red-600 p-1.5 h-8 w-8"
+                                className="text-[#64748B] hover:text-red-400 hover:bg-red-950/30 p-1.5 h-8 w-8 cursor-pointer"
                                 title="Delete Record"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -371,46 +389,47 @@ export default function CallHistoryPage() {
 
                         {/* ─── INLINE ACCORDION EXPANSION: SPECTROGRAM & FORENSIC EVIDENCE ─── */}
                         {isSelected && (
-                          <tr className="bg-orange-50/20 border-b border-orange-200 animate-in fade-in duration-150">
-                            <td colSpan={9} className="p-5">
+                          <tr className="bg-[#080D17]/95 border-b border-[#F6821F]/30 animate-in fade-in duration-200">
+                            <td colSpan={9} className="p-5 sm:p-6">
                               <div className="space-y-4">
-                                <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                                <div className="flex items-center justify-between border-b border-[#223047] pb-3">
                                   <div className="flex items-center gap-2">
-                                    <h3 className="font-bold text-gray-900 text-sm">
-                                      Call Detail: <span className="font-mono text-[#F6821F]">{call.id}</span>
+                                    <span className="w-2 h-2 rounded-full bg-[#F6821F] animate-ping" />
+                                    <h3 className="font-bold text-[#F7F9FC] text-sm tracking-tight">
+                                      Forensic Ledger: <span className="font-mono text-[#F6821F]">{call.id}</span>
                                     </h3>
-                                    <span className="text-gray-400">—</span>
-                                    <span className="text-gray-700 text-xs font-semibold">{call.caller}</span>
+                                    <span className="text-[#64748B]">—</span>
+                                    <span className="text-[#94A3B8] text-xs font-mono">{call.caller}</span>
                                   </div>
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setSelectedCall(null)}
-                                    className="text-xs text-gray-500 hover:text-red-600 cursor-pointer"
+                                    className="text-xs text-[#94A3B8] hover:text-red-400 hover:bg-red-950/20 cursor-pointer h-7"
                                   >
                                     Close Detail
                                   </Button>
                                 </div>
 
-                                <div className="grid md:grid-cols-3 gap-4 text-xs">
-                                  <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-1 shadow-xs">
-                                    <p className="text-gray-500 font-semibold uppercase tracking-wider text-[10px]">Acoustic Authenticity</p>
-                                    <p className={cn("text-lg font-bold", call.authenticity > 50 ? "text-emerald-700" : "text-red-700")}>
+                                <div className="grid md:grid-cols-3 gap-3 text-xs">
+                                  <div className="bg-[#0D1422] p-3.5 rounded-xl border border-[#223047] space-y-1">
+                                    <p className="text-[#64748B] font-mono font-semibold uppercase tracking-wider text-[10px]">Acoustic Authenticity</p>
+                                    <p className={cn("text-xl font-extrabold font-mono", call.authenticity > 50 ? "text-emerald-400" : "text-red-400")}>
                                       {call.authenticity}%
                                     </p>
-                                    <p className="text-gray-500">Threshold: &gt;50% Human</p>
+                                    <p className="text-[#94A3B8] text-[11px]">Threshold: &gt;50% Human</p>
                                   </div>
-                                  <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-1 shadow-xs">
-                                    <p className="text-gray-500 font-semibold uppercase tracking-wider text-[10px]">Speaker Identity Match</p>
-                                    <p className={cn("text-lg font-bold", call.identity > 70 ? "text-emerald-700" : "text-amber-700")}>
+                                  <div className="bg-[#0D1422] p-3.5 rounded-xl border border-[#223047] space-y-1">
+                                    <p className="text-[#64748B] font-mono font-semibold uppercase tracking-wider text-[10px]">Speaker Identity Match</p>
+                                    <p className={cn("text-xl font-extrabold font-mono", call.identity > 70 ? "text-emerald-400" : "text-amber-400")}>
                                       {call.identity}%
                                     </p>
-                                    <p className="text-gray-500">ECAPA Cosine Score</p>
+                                    <p className="text-[#94A3B8] text-[11px]">ECAPA Cosine Score</p>
                                   </div>
-                                  <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-1 shadow-xs">
-                                    <p className="text-gray-500 font-semibold uppercase tracking-wider text-[10px]">Conversation Context</p>
-                                    <p className="text-sm font-bold text-gray-900 truncate" title={call.context}>{call.context}</p>
-                                    <p className="text-gray-500 truncate">
+                                  <div className="bg-[#0D1422] p-3.5 rounded-xl border border-[#223047] space-y-1">
+                                    <p className="text-[#64748B] font-mono font-semibold uppercase tracking-wider text-[10px]">Conversation Context</p>
+                                    <p className="text-sm font-semibold text-[#F7F9FC] truncate" title={call.context}>{call.context}</p>
+                                    <p className="text-[#94A3B8] text-[11px] truncate">
                                       Flagged: {call.flaggedPhrases.length ? call.flaggedPhrases.join(", ") : "None"}
                                     </p>
                                   </div>
@@ -418,25 +437,25 @@ export default function CallHistoryPage() {
 
                                 {/* Evidentiary Analysis Spectrogram Section */}
                                 {call.spectrogramData ? (
-                                  <div className="p-4 bg-white border border-gray-200 rounded-lg space-y-3 shadow-sm">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-2">
+                                  <div className="p-4 bg-[#0D1422] border border-[#223047] rounded-xl space-y-3 shadow-xl">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#223047] pb-2.5">
                                       <div>
                                         <div className="flex items-center gap-2">
-                                          <h4 className="text-xs font-bold text-gray-900 tracking-tight">
-                                            Analysis Spectrogram
+                                          <h4 className="text-xs font-bold text-[#F7F9FC] tracking-tight uppercase font-mono">
+                                            Analysis Spectrogram Evidence
                                           </h4>
                                           <Badge
                                             variant="outline"
-                                            className="bg-emerald-50 text-emerald-800 border-emerald-300 text-[10px] font-semibold"
+                                            className="bg-emerald-950/60 text-emerald-300 border-emerald-700/60 text-[10px] font-semibold"
                                           >
                                             Retained Evidence
                                           </Badge>
                                         </div>
-                                        <p className="text-[11px] text-gray-500 mt-0.5">
-                                          Generated from the audio used by the detection pipeline.
+                                        <p className="text-[11px] text-[#94A3B8] mt-0.5">
+                                          High-resolution STFT spectrogram generated directly from forensic audio buffers.
                                         </p>
                                       </div>
-                                      <span className="text-[11px] font-mono text-gray-400">
+                                      <span className="text-[11px] font-mono text-[#64748B]">
                                         {call.id}
                                       </span>
                                     </div>
@@ -445,24 +464,24 @@ export default function CallHistoryPage() {
                                     <div
                                       role="status"
                                       aria-live="polite"
-                                      className="text-xs bg-slate-50 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-mono flex flex-wrap items-center justify-between gap-2"
+                                      className="text-xs bg-[#121C2D] border border-[#223047] text-[#94A3B8] px-3.5 py-2 rounded-lg font-mono flex flex-wrap items-center justify-between gap-2"
                                     >
-                                      <span className="font-sans font-medium text-slate-900">
+                                      <span className="font-sans font-medium text-[#E2E8F0]">
                                         {meta?.summary || (
                                           <>
-                                            Spectrogram for <span className="font-semibold">{meta?.filename || call.caller}</span>, duration{" "}
-                                            <span className="font-semibold">{meta?.duration_seconds ? `${meta.duration_seconds}s` : call.duration}</span>, sample rate{" "}
-                                            <span className="font-semibold">{meta?.sample_rate?.toLocaleString() || "16,000"} Hz</span>.
+                                            Spectrogram for <span className="font-semibold text-[#F7F9FC]">{meta?.filename || call.caller}</span>, duration{" "}
+                                            <span className="font-semibold text-[#F6821F]">{meta?.duration_seconds ? `${meta.duration_seconds}s` : call.duration}</span>, sample rate{" "}
+                                            <span className="font-semibold text-emerald-400">{meta?.sample_rate?.toLocaleString() || "16,000"} Hz</span>.
                                           </>
                                         )}
                                       </span>
-                                      <Badge variant="outline" className="text-[10px] bg-slate-100 font-mono text-slate-600 border-slate-300">
+                                      <Badge variant="outline" className="text-[10px] bg-[#080D17] font-mono text-[#94A3B8] border-[#223047]">
                                         {meta?.preprocessing_version || "AMVTF-v2.1-Preprocessed-16kHz"}
                                       </Badge>
                                     </div>
 
                                     {/* Render Image */}
-                                    <div className="relative rounded-lg overflow-hidden border border-slate-800 bg-[#0B1120] shadow-inner max-w-4xl mx-auto">
+                                    <div className="relative rounded-lg overflow-hidden border border-[#223047] bg-[#050811] shadow-2xl max-w-4xl mx-auto">
                                       {/* eslint-disable-next-line @next/next/no-img-element */}
                                       <img
                                         src={call.spectrogramData}
@@ -472,39 +491,39 @@ export default function CallHistoryPage() {
                                     </div>
 
                                     {/* Metadata Badges */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-0.5 max-w-4xl mx-auto">
-                                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
-                                        <span className="text-gray-400 text-[10px] uppercase font-semibold block">Analysis ID</span>
-                                        <span className="font-bold font-mono text-gray-800 text-xs truncate block">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1 max-w-4xl mx-auto">
+                                      <div className="bg-[#121C2D] p-2 rounded-lg border border-[#223047]">
+                                        <span className="text-[#64748B] text-[10px] uppercase font-semibold block font-mono">Analysis ID</span>
+                                        <span className="font-bold font-mono text-[#F7F9FC] text-xs truncate block">
                                           {call.id}
                                         </span>
                                       </div>
-                                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
-                                        <span className="text-gray-400 text-[10px] uppercase font-semibold block">Sample Rate</span>
-                                        <span className="font-bold font-mono text-gray-800 text-xs">
+                                      <div className="bg-[#121C2D] p-2 rounded-lg border border-[#223047]">
+                                        <span className="text-[#64748B] text-[10px] uppercase font-semibold block font-mono">Sample Rate</span>
+                                        <span className="font-bold font-mono text-[#F7F9FC] text-xs">
                                           {meta?.sample_rate?.toLocaleString() || "16,000"} Hz (Mono)
                                         </span>
                                       </div>
-                                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
-                                        <span className="text-gray-400 text-[10px] uppercase font-semibold block">FFT & Hop</span>
-                                        <span className="font-bold font-mono text-gray-800 text-xs">
+                                      <div className="bg-[#121C2D] p-2 rounded-lg border border-[#223047]">
+                                        <span className="text-[#64748B] text-[10px] uppercase font-semibold block font-mono">FFT & Hop</span>
+                                        <span className="font-bold font-mono text-[#F7F9FC] text-xs">
                                           {meta?.n_fft || 512} FFT / {meta?.hop_length || 256} Hop
                                         </span>
                                       </div>
-                                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
-                                        <span className="text-gray-400 text-[10px] uppercase font-semibold block">Frequency Scale</span>
-                                        <span className="font-bold font-mono text-gray-800 text-xs">
+                                      <div className="bg-[#121C2D] p-2 rounded-lg border border-[#223047]">
+                                        <span className="text-[#64748B] text-[10px] uppercase font-semibold block font-mono">Frequency Scale</span>
+                                        <span className="font-bold font-mono text-[#F7F9FC] text-xs">
                                           {meta?.frequency_scale || "Linear 0 - 8,000 Hz"}
                                         </span>
                                       </div>
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="p-3.5 bg-white border border-gray-200 rounded-lg flex items-start gap-3">
-                                    <Info className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                                  <div className="p-3.5 bg-[#0D1422] border border-[#223047] rounded-xl flex items-start gap-3">
+                                    <Info className="w-4 h-4 text-[#64748B] shrink-0 mt-0.5" />
                                     <div className="text-xs space-y-0.5">
-                                      <p className="font-semibold text-gray-700">Evidentiary Spectrogram</p>
-                                      <p className="text-gray-500">
+                                      <p className="font-semibold text-[#F7F9FC]">Evidentiary Spectrogram</p>
+                                      <p className="text-[#94A3B8]">
                                         Visual evidence unavailable for this historical record (audio retention policy expired or pre-dates evidentiary logging).
                                       </p>
                                     </div>

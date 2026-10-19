@@ -47,6 +47,33 @@
 }
 
 :root {
+  --background: #080D17;
+  --foreground: #F7F9FC;
+  --card: #0D1422;
+  --card-foreground: #F7F9FC;
+  --popover: #0D1422;
+  --popover-foreground: #F7F9FC;
+  --primary: #F6821F;
+  --primary-foreground: #FFFFFF;
+  --secondary: #121C2D;
+  --secondary-foreground: #A9B7CC;
+  --muted: #121C2D;
+  --muted-foreground: #74839B;
+  --accent: #18253B;
+  --accent-foreground: #F6821F;
+  --destructive: #FF5365;
+  --border: #223047;
+  --input: #1D2D47;
+  --ring: #F6821F;
+  --chart-1: #F6821F;
+  --chart-2: #23C483;
+  --chart-3: #F4B942;
+  --chart-4: #FF5365;
+  --chart-5: #569CFF;
+  --radius: 8px;
+}
+
+.light {
   --background: #F9FAFB;
   --foreground: #111827;
   --card: #FFFFFF;
@@ -65,12 +92,6 @@
   --border: #E5E7EB;
   --input: #D1D5DB;
   --ring: #F6821F;
-  --chart-1: #F6821F;
-  --chart-2: #10B981;
-  --chart-3: #F59E0B;
-  --chart-4: #EF4444;
-  --chart-5: #6366F1;
-  --radius: 6px;
 }
 
 @layer base {
@@ -152,4 +173,51 @@ nextjs-portal,
 [data-nextjs-toast] {
   left: auto !important;
   right: 20px !important;
+}
+
+/* Aerospace SOC Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #080D17;
+}
+::-webkit-scrollbar-thumb {
+  background: #1D2D47;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334664;
+}
+
+/* Tactical Aerospace Grid Background */
+.soc-grid {
+  background-image:
+    linear-gradient(to right, rgba(34, 48, 71, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(34, 48, 71, 0.22) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.soc-radial-glow {
+  background: radial-gradient(circle at 50% 0%, rgba(246, 130, 31, 0.08) 0%, rgba(8, 13, 23, 0) 70%);
+}
+
+.cyber-panel {
+  background: linear-gradient(180deg, rgba(18, 28, 45, 0.85) 0%, rgba(13, 20, 34, 0.95) 100%);
+  border: 1px solid #223047;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+}
+
+.glow-orange {
+  box-shadow: 0 0 20px -3px rgba(246, 130, 31, 0.35);
+}
+
+.glow-safe {
+  box-shadow: 0 0 20px -3px rgba(35, 196, 131, 0.35);
+}
+
+.glow-critical {
+  box-shadow: 0 0 20px -3px rgba(255, 83, 101, 0.35);
 }

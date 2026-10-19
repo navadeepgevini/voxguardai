@@ -615,57 +615,43 @@ export default function SettingsPage() {
 
   return (
     <>
-      {/* Top Navbar */}
-      <nav className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 z-20 sticky top-0">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <a href="/" className="hover:text-[#F6821F]">VoxGuard SOC</a>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-gray-900 font-medium">Engine Configuration & API Billing</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-xs font-semibold text-[#F6821F]">
-            <Zap className="w-3.5 h-3.5" />
-            <span>Pay-As-You-Go: ₹2.00 / Min</span>
-          </div>
-          <button className="text-gray-500 hover:text-gray-900 relative">
-            <Bell className="w-5 h-5" />
-          </button>
-        </div>
-      </nav>
-
       {/* Page Header */}
-      <header className="bg-white border-b border-gray-200 py-6 px-6 sm:px-10 shadow-sm">
-        <div className="max-w-[1400px] mx-auto flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <header className="bg-[#0D1422]/90 border-b border-[#223047] py-6 px-6 sm:px-10 backdrop-blur-md sticky top-0 z-10 shadow-lg">
+        <div className="max-w-[1400px] mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#F6821F] uppercase tracking-wider mb-1">
-              <span>Security Operations Center</span>
-              <span>•</span>
-              <span>System Settings & Indian Rupee (₹) Billing</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-[#F6821F]/10 text-[#F6821F] border border-[#F6821F]/30">
+                <Sliders className="w-3 h-3 text-[#F6821F]" /> Platform Governance
+              </span>
+              <span className="text-[#64748B] text-xs font-mono">•</span>
+              <span className="text-[#94A3B8] text-xs font-mono">Dynamic Thresholds & Billing</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Platform Settings & Telephony API</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#F7F9FC] tracking-tight">
+              Platform Settings & Telephony API
+            </h1>
+            <p className="text-xs sm:text-sm text-[#94A3B8] mt-1">
               Configure multi-modal biometric thresholds, telephony webhook endpoints, and usage-based audio billing.
             </p>
           </div>
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-sm flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+            className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-lg shadow-[#F6821F]/20 flex items-center gap-2 self-start sm:self-auto cursor-pointer h-9 px-4 text-xs font-semibold"
           >
             {saving ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 <span>Saving...</span>
               </>
             ) : savedSuccess ? (
               <>
-                <CheckCircle2 className="w-4 h-4 text-white" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
                 <span>Saved to Database!</span>
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
-                <span>Save Configuration</span>
+                <Save className="w-3.5 h-3.5" />
+                <span>Save All Changes</span>
               </>
             )}
           </Button>
@@ -676,7 +662,7 @@ export default function SettingsPage() {
       <main className="max-w-[1400px] mx-auto p-6 sm:p-10">
         <div className="grid lg:grid-cols-[280px_1fr] gap-8 items-start">
           {/* Section Navigation Sidebar */}
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-2 space-y-1">
+          <div className="bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-2 space-y-1 backdrop-blur-md">
             {sections.map((section) => {
               const Icon = section.icon;
               const isActive = activeSection === section.id;
@@ -685,16 +671,16 @@ export default function SettingsPage() {
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={cn(
-                    "w-full text-left px-3 py-2.5 rounded-md flex items-start gap-3 transition-colors cursor-pointer",
+                    "w-full text-left px-3.5 py-3 rounded-lg flex items-start gap-3 transition-all cursor-pointer border",
                     isActive
-                      ? "bg-orange-50 text-[#F6821F] font-semibold"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      ? "bg-[#F6821F]/10 border-[#F6821F]/40 text-[#F6821F] font-semibold shadow-xs"
+                      : "border-transparent text-[#94A3B8] hover:bg-[#121C2D] hover:text-[#F7F9FC]"
                   )}
                 >
-                  <Icon className={cn("w-5 h-5 mt-0.5 shrink-0", isActive ? "text-[#F6821F]" : "text-gray-400")} />
+                  <Icon className={cn("w-5 h-5 mt-0.5 shrink-0", isActive ? "text-[#F6821F]" : "text-[#64748B]")} />
                   <div>
-                    <div className="text-sm">{section.label}</div>
-                    <div className="text-[11px] text-gray-400 font-normal leading-tight mt-0.5">{section.description}</div>
+                    <div className="text-sm font-medium">{section.label}</div>
+                    <div className="text-[11px] text-[#64748B] font-normal leading-tight mt-0.5">{section.description}</div>
                   </div>
                 </button>
               );
@@ -705,21 +691,39 @@ export default function SettingsPage() {
           <div className="space-y-6">
             {activeSection === "thresholds" && (
               <>
-                <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-1">AMVTF Biometric Threat Thresholds</h2>
-                  <p className="text-sm text-gray-500 mb-6">
-                    Fine-tune the neural sensitivity thresholds for voice authenticity, speaker recognition, and intent risk.
-                  </p>
+                <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-6 backdrop-blur-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#223047] mb-6 gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-[#F6821F]/10 text-[#F6821F] border border-[#F6821F]/30">
+                          <Sliders className="w-3 h-3 text-[#F6821F]" /> Fusion Gate
+                        </span>
+                        <span className="text-[#64748B] text-xs font-mono">•</span>
+                        <span className="text-[#94A3B8] text-xs font-mono">AMVTF Inference Parameters</span>
+                      </div>
+                      <h2 className="text-lg font-bold text-[#F7F9FC] tracking-tight">AMVTF Biometric Threat Thresholds</h2>
+                      <p className="text-xs text-[#94A3B8] mt-0.5">
+                        Fine-tune the neural sensitivity thresholds for voice authenticity, speaker recognition, and intent risk.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#121C2D] border border-[#223047] rounded-lg self-start sm:self-auto">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs font-mono text-[#94A3B8]">
+                        Mode: <strong className="text-[#F7F9FC]">{aasistThreshold > 60 ? "MAXIMUM_SECURITY" : aasistThreshold > 40 ? "BALANCED" : "LOW_FALSE_POSITIVE"}</strong>
+                      </span>
+                    </div>
+                  </div>
 
                   <div className="space-y-6">
                     {/* AASIST */}
-                    <div>
+                    <div className="bg-[#121C2D]/60 p-4 rounded-xl border border-[#223047]/60">
                       <div className="flex justify-between items-center mb-2">
                         <div>
-                          <label className="text-sm font-semibold text-gray-900">AASIST Authenticity Cutoff</label>
-                          <p className="text-xs text-gray-500">Deepfake detection minimum score to flag audio as synthetic</p>
+                          <label className="text-sm font-bold text-[#F7F9FC]">AASIST Authenticity Cutoff</label>
+                          <p className="text-xs text-[#94A3B8]">Deepfake detection minimum score to flag audio as synthetic</p>
                         </div>
-                        <span className="text-lg font-bold text-[#F6821F] font-mono">{aasistThreshold}%</span>
+                        <span className="text-xl font-extrabold text-[#F6821F] font-mono">{aasistThreshold}%</span>
                       </div>
                       <input
                         type="range"
@@ -727,25 +731,23 @@ export default function SettingsPage() {
                         max="95"
                         value={aasistThreshold}
                         onChange={(e) => setAasistThreshold(Number(e.target.value))}
-                        className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#F6821F]"
+                        className="w-full h-2 bg-[#080D17] border border-[#223047] rounded-full appearance-none cursor-pointer accent-[#F6821F]"
                       />
-                      <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                      <div className="flex justify-between text-[11px] font-mono text-[#64748B] mt-1.5">
                         <span>Permissive (10%)</span>
-                        <span>Balanced (50%)</span>
+                        <span className="text-[#94A3B8]">Balanced (50%)</span>
                         <span>Strict (95%)</span>
                       </div>
                     </div>
 
-                    <div className="h-px bg-gray-200" />
-
                     {/* ECAPA */}
-                    <div>
+                    <div className="bg-[#121C2D]/60 p-4 rounded-xl border border-[#223047]/60">
                       <div className="flex justify-between items-center mb-2">
                         <div>
-                          <label className="text-sm font-semibold text-gray-900">ECAPA-TDNN Speaker Verification Minimum</label>
-                          <p className="text-xs text-gray-500">192-dimensional cosine similarity threshold for identity match</p>
+                          <label className="text-sm font-bold text-[#F7F9FC]">ECAPA-TDNN Speaker Verification Minimum</label>
+                          <p className="text-xs text-[#94A3B8]">192-dimensional cosine similarity threshold for identity match</p>
                         </div>
-                        <span className="text-lg font-bold text-[#F6821F] font-mono">{ecapaThreshold}%</span>
+                        <span className="text-xl font-extrabold text-[#F6821F] font-mono">{ecapaThreshold}%</span>
                       </div>
                       <input
                         type="range"
@@ -753,24 +755,22 @@ export default function SettingsPage() {
                         max="99"
                         value={ecapaThreshold}
                         onChange={(e) => setEcapaThreshold(Number(e.target.value))}
-                        className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#F6821F]"
+                        className="w-full h-2 bg-[#080D17] border border-[#223047] rounded-full appearance-none cursor-pointer accent-[#F6821F]"
                       />
-                      <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                      <div className="flex justify-between text-[11px] font-mono text-[#64748B] mt-1.5">
                         <span>Permissive (30%)</span>
                         <span>Strict (99%)</span>
                       </div>
                     </div>
 
-                    <div className="h-px bg-gray-200" />
-
                     {/* NLP */}
-                    <div>
+                    <div className="bg-[#121C2D]/60 p-4 rounded-xl border border-[#223047]/60">
                       <div className="flex justify-between items-center mb-2">
                         <div>
-                          <label className="text-sm font-semibold text-gray-900">NLP Contextual Sensitivity</label>
-                          <p className="text-xs text-gray-500">DistilBERT urgency and social-engineering sensitivity level</p>
+                          <label className="text-sm font-bold text-[#F7F9FC]">NLP Contextual Sensitivity</label>
+                          <p className="text-xs text-[#94A3B8]">DistilBERT urgency and social-engineering sensitivity level</p>
                         </div>
-                        <span className="text-lg font-bold text-[#F6821F] font-mono">{nlpSensitivity}%</span>
+                        <span className="text-xl font-extrabold text-[#F6821F] font-mono">{nlpSensitivity}%</span>
                       </div>
                       <input
                         type="range"
@@ -778,9 +778,9 @@ export default function SettingsPage() {
                         max="100"
                         value={nlpSensitivity}
                         onChange={(e) => setNlpSensitivity(Number(e.target.value))}
-                        className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#F6821F]"
+                        className="w-full h-2 bg-[#080D17] border border-[#223047] rounded-full appearance-none cursor-pointer accent-[#F6821F]"
                       />
-                      <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                      <div className="flex justify-between text-[11px] font-mono text-[#64748B] mt-1.5">
                         <span>Less Sensitive (20%)</span>
                         <span>More Sensitive (100%)</span>
                       </div>
@@ -793,16 +793,16 @@ export default function SettingsPage() {
             {activeSection === "notifications" && (
               <div className="space-y-6">
                 {/* 1. Main Master Toggle & Pipeline Health */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-gray-100 gap-4">
+                <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-6 backdrop-blur-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-[#223047] gap-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold text-gray-900">Incident Notification Channels</h2>
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+                        <h2 className="text-lg font-bold text-[#F7F9FC]">Incident Notification Channels</h2>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#F6821F]/10 text-[#F6821F] border border-[#F6821F]/30">
                           <Mail className="w-3.5 h-3.5 text-[#F6821F]" /> Resend Email Engine
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-[#94A3B8] mt-1">
                         Dispatch real-time security alerts to authorized SOC responders, mobile devices, and incident webhooks.
                       </p>
                     </div>
@@ -811,7 +811,7 @@ export default function SettingsPage() {
                       <Button
                         onClick={handleSaveNotificationPolicy}
                         disabled={notifSaving}
-                        className="bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs gap-1.5 cursor-pointer shadow-sm"
+                        className="bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs font-semibold gap-1.5 cursor-pointer shadow-lg shadow-[#F6821F]/20 h-9 px-3"
                       >
                         {notifSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                         Save Notification Policy
@@ -821,10 +821,10 @@ export default function SettingsPage() {
 
                   {/* Master Email Alerts Toggle */}
                   <div className="pt-5 space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-gray-50/70 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-[#121C2D]/60 border border-[#223047] rounded-xl">
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">Master Email Alerting</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-sm font-bold text-[#F7F9FC]">Master Email Alerting</p>
+                        <p className="text-xs text-[#94A3B8] mt-0.5">
                           When enabled, verified incidents enqueue background email delivery through Resend to configured security recipients.
                         </p>
                       </div>
@@ -832,35 +832,35 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Helper Copy Banner */}
-                    <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-lg flex items-start gap-2.5 text-xs text-blue-900">
-                      <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <div className="p-3.5 bg-blue-950/30 border border-blue-800/40 rounded-xl flex items-start gap-2.5 text-xs text-blue-200">
+                      <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
                       <div className="leading-relaxed">
-                        <p className="font-semibold text-blue-950">Mobile Delivery Notice:</p>
-                        <p className="mt-0.5">
+                        <p className="font-bold text-blue-300">Mobile Delivery Notice:</p>
+                        <p className="mt-0.5 text-blue-200/90">
                           Alerts are delivered by email and may appear on the recipient’s phone through their email app. Delivery timing depends on the email provider and phone notification settings.
                         </p>
                       </div>
                     </div>
 
                     {/* Resend Provider Delivery Readiness & Status Card */}
-                    <div className="p-4 border border-gray-200 rounded-lg bg-white shadow-xs">
+                    <div className="p-4 border border-[#223047] rounded-xl bg-[#121C2D]/40">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">Resend Email Delivery Readiness & Status</h3>
+                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-[#94A3B8] font-mono">Resend Email Delivery Readiness & Status</h3>
                         </div>
                         <Badge
                           className={cn(
-                            "text-xs px-2.5 py-0.5 font-medium border",
+                            "text-xs px-2.5 py-0.5 font-medium border font-mono",
                             deliveryStatus === "Ready" || deliveryStatus === "Sent"
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                              ? "bg-emerald-950/60 text-emerald-300 border-emerald-700/60"
                               : deliveryStatus === "Sending"
-                              ? "bg-blue-50 text-blue-800 border-blue-300"
+                              ? "bg-blue-950/60 text-blue-300 border-blue-700/60"
                               : deliveryStatus === "Not configured"
-                              ? "bg-amber-50 text-amber-800 border-amber-300"
+                              ? "bg-amber-950/60 text-amber-300 border-amber-700/60"
                               : deliveryStatus === "Suppressed"
-                              ? "bg-purple-50 text-purple-800 border-purple-300"
-                              : "bg-red-50 text-red-800 border-red-300"
+                              ? "bg-purple-950/60 text-purple-300 border-purple-700/60"
+                              : "bg-red-950/60 text-red-300 border-red-700/60"
                           )}
                         >
                           {deliveryStatus}
@@ -868,30 +868,30 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                        <div className="p-2.5 bg-gray-50 rounded border border-gray-100">
-                          <span className="text-gray-400 block text-[10px] uppercase font-semibold">Delivery State</span>
-                          <span className="font-mono font-medium text-gray-800">{deliveryStatus}</span>
+                        <div className="p-2.5 bg-[#080D17] rounded-lg border border-[#223047]">
+                          <span className="text-[#64748B] block text-[10px] uppercase font-semibold font-mono">Delivery State</span>
+                          <span className="font-mono font-bold text-[#F7F9FC]">{deliveryStatus}</span>
                         </div>
-                        <div className="p-2.5 bg-gray-50 rounded border border-gray-100">
-                          <span className="text-gray-400 block text-[10px] uppercase font-semibold">Recipient Status</span>
-                          <span className="font-mono font-medium text-gray-800 truncate block" title={recipientStatus}>
+                        <div className="p-2.5 bg-[#080D17] rounded-lg border border-[#223047]">
+                          <span className="text-[#64748B] block text-[10px] uppercase font-semibold font-mono">Recipient Status</span>
+                          <span className="font-mono font-medium text-[#F7F9FC] truncate block" title={recipientStatus}>
                             {recipientStatus}
                           </span>
                         </div>
-                        <div className="p-2.5 bg-gray-50 rounded border border-gray-100">
-                          <span className="text-gray-400 block text-[10px] uppercase font-semibold">Sender Identity</span>
-                          <span className="font-mono font-medium text-gray-800 truncate block" title={notifPolicy?.resend_from || "onboarding@resend.dev"}>
+                        <div className="p-2.5 bg-[#080D17] rounded-lg border border-[#223047]">
+                          <span className="text-[#64748B] block text-[10px] uppercase font-semibold font-mono">Sender Identity</span>
+                          <span className="font-mono font-medium text-[#F7F9FC] truncate block" title={notifPolicy?.resend_from || "onboarding@resend.dev"}>
                             {notifPolicy?.resend_from || "onboarding@resend.dev"}
                           </span>
                         </div>
-                        <div className="p-2.5 bg-gray-50 rounded border border-gray-100">
-                          <span className="text-gray-400 block text-[10px] uppercase font-semibold">Key Protection</span>
-                          <span className="text-emerald-700 font-medium flex items-center gap-1">
-                            <Lock className="w-3 h-3" /> Server-Side (Zero-Leak)
+                        <div className="p-2.5 bg-[#080D17] rounded-lg border border-[#223047]">
+                          <span className="text-[#64748B] block text-[10px] uppercase font-semibold font-mono">Key Protection</span>
+                          <span className="text-emerald-400 font-medium flex items-center gap-1 font-mono">
+                            <Lock className="w-3 h-3 text-emerald-400" /> Server-Side (Zero-Leak)
                           </span>
                         </div>
                       </div>
-                      <p className="text-[11px] text-gray-400 mt-2">
+                      <p className="text-[11px] text-[#64748B] mt-2 font-mono">
                         * Note: Resend API credentials and keys are strictly evaluated server-side in Node.js and never exposed via browser bundles, JavaScript, or network responses.
                       </p>
                     </div>
@@ -899,21 +899,21 @@ export default function SettingsPage() {
                 </div>
 
                 {/* 2. Alert Trigger Conditions & Operational Policies */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-                  <div className="pb-4 border-b border-gray-100">
-                    <h3 className="text-base font-bold text-gray-900">Alert Trigger Policies & Event Filtering</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Select which security events automatically queue high-priority email alerts.</p>
+                <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-6 backdrop-blur-md">
+                  <div className="pb-4 border-b border-[#223047]">
+                    <h3 className="text-base font-bold text-[#F7F9FC]">Alert Trigger Policies & Event Filtering</h3>
+                    <p className="text-xs text-[#94A3B8] mt-0.5">Select which security events automatically queue high-priority email alerts.</p>
                   </div>
 
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-[#223047]/60">
                     {/* Trigger 1: Likely Synthetic Deepfake */}
                     <div className="py-3.5 flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-gray-900">Likely Synthetic Result (Synthetic Deepfake &ge; {syntheticThreshold}%)</p>
-                          <Badge className="bg-red-50 text-red-700 border-red-200 text-[10px]">CRITICAL</Badge>
+                          <p className="text-sm font-semibold text-[#F7F9FC]">Likely Synthetic Result (Synthetic Deepfake &ge; {syntheticThreshold}%)</p>
+                          <Badge className="bg-red-950/60 text-red-400 border-red-700/60 text-[10px] font-mono">CRITICAL</Badge>
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-[#94A3B8] mt-0.5">
                           Dispatch immediate alert when AMVTF vocoder artifacts or acoustic physical features indicate synthetic confidence at or above {syntheticThreshold}%.
                         </p>
                       </div>
@@ -924,10 +924,10 @@ export default function SettingsPage() {
                     <div className="py-3.5 flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-gray-900">High Contextual Risk (Social Engineering & Impersonation &ge; {contextThreshold}%)</p>
-                          <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]">WARNING</Badge>
+                          <p className="text-sm font-semibold text-[#F7F9FC]">High Contextual Risk (Social Engineering & Impersonation &ge; {contextThreshold}%)</p>
+                          <Badge className="bg-amber-950/60 text-amber-400 border-amber-700/60 text-[10px] font-mono">WARNING</Badge>
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-[#94A3B8] mt-0.5">
                           Alert when NLP analyzes urgent funds transfer, secrecy pressure, or executive impersonation risk at or above {contextThreshold}%.
                         </p>
                       </div>
@@ -938,10 +938,10 @@ export default function SettingsPage() {
                     <div className="py-3.5 flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-gray-900">Inconclusive / Analysis Degradation Operational Alert</p>
-                          <Badge className="bg-gray-100 text-gray-700 border-gray-300 text-[10px]">INFO</Badge>
+                          <p className="text-sm font-semibold text-[#F7F9FC]">Inconclusive / Analysis Degradation Operational Alert</p>
+                          <Badge className="bg-[#121C2D] text-[#94A3B8] border-[#223047] text-[10px] font-mono">INFO</Badge>
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-[#94A3B8] mt-0.5">
                           Notify SOC operations when audio sample suffers from excessive packet loss, clipping, or insufficient speech duration (&lt;1.5s).
                         </p>
                       </div>
@@ -952,13 +952,13 @@ export default function SettingsPage() {
                     <div className="py-3.5 flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-gray-900">Enrolled Identity Mismatch</p>
-                          <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px]">VERIFICATION</Badge>
+                          <p className="text-sm font-semibold text-[#F7F9FC]">Enrolled Identity Mismatch</p>
+                          <Badge className="bg-blue-950/60 text-blue-400 border-blue-700/60 text-[10px] font-mono">VERIFICATION</Badge>
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-[#94A3B8] mt-0.5">
                           Trigger verification notification when speaker does not match target voiceprint reference.
                         </p>
-                        <p className="text-[11px] text-amber-700 font-medium mt-1">
+                        <p className="text-[11px] text-amber-400/90 font-mono mt-1">
                           ⚠ Identity mismatch is separately configurable and is not described as a deepfake result.
                         </p>
                       </div>
@@ -967,140 +967,140 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Alert Thresholds, Rate Limiting & Cooldown */}
-                  <div className="mt-5 pt-4 border-t border-gray-100 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="mt-5 pt-4 border-t border-[#223047] grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="p-3 bg-[#121C2D]/60 rounded-xl border border-[#223047]">
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-semibold text-gray-800">Synthetic Threshold</label>
+                        <label className="text-xs font-semibold text-[#F7F9FC]">Synthetic Threshold</label>
                         <span className="text-xs font-mono font-bold text-[#F6821F]">{syntheticThreshold}%</span>
                       </div>
-                      <p className="text-[11px] text-gray-500 mb-2">Trigger alert when synthetic confidence reaches this level.</p>
+                      <p className="text-[11px] text-[#94A3B8] mb-2">Trigger alert when synthetic confidence reaches this level.</p>
                       <input
                         type="range"
                         min="50"
                         max="95"
                         value={syntheticThreshold}
                         onChange={(e) => setSyntheticThreshold(Number(e.target.value))}
-                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#F6821F]"
+                        className="w-full h-1.5 bg-[#080D17] border border-[#223047] rounded-lg appearance-none cursor-pointer accent-[#F6821F]"
                       />
                     </div>
 
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="p-3 bg-[#121C2D]/60 rounded-xl border border-[#223047]">
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-semibold text-gray-800">Context Threshold</label>
+                        <label className="text-xs font-semibold text-[#F7F9FC]">Context Threshold</label>
                         <span className="text-xs font-mono font-bold text-[#F6821F]">{contextThreshold}%</span>
                       </div>
-                      <p className="text-[11px] text-gray-500 mb-2">Trigger alert when contextual threat risk reaches this level.</p>
+                      <p className="text-[11px] text-[#94A3B8] mb-2">Trigger alert when contextual threat risk reaches this level.</p>
                       <input
                         type="range"
                         min="50"
                         max="95"
                         value={contextThreshold}
                         onChange={(e) => setContextThreshold(Number(e.target.value))}
-                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#F6821F]"
+                        className="w-full h-1.5 bg-[#080D17] border border-[#223047] rounded-lg appearance-none cursor-pointer accent-[#F6821F]"
                       />
                     </div>
 
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="p-3 bg-[#121C2D]/60 rounded-xl border border-[#223047]">
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-semibold text-gray-800">Per-Incident Cooldown</label>
+                        <label className="text-xs font-semibold text-[#F7F9FC]">Per-Incident Cooldown</label>
                         <span className="text-xs font-mono font-bold text-[#F6821F]">{cooldownMinutes} min</span>
                       </div>
-                      <p className="text-[11px] text-gray-500 mb-2">Suppress repeat alerts for the same analysis ID.</p>
+                      <p className="text-[11px] text-[#94A3B8] mb-2">Suppress repeat alerts for the same analysis ID.</p>
                       <input
                         type="range"
                         min="1"
                         max="60"
                         value={cooldownMinutes}
                         onChange={(e) => setCooldownMinutes(Number(e.target.value))}
-                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#F6821F]"
+                        className="w-full h-1.5 bg-[#080D17] border border-[#223047] rounded-lg appearance-none cursor-pointer accent-[#F6821F]"
                       />
                     </div>
 
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="p-3 bg-[#121C2D]/60 rounded-xl border border-[#223047]">
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-semibold text-gray-800">Max Alerts / Hour</label>
+                        <label className="text-xs font-semibold text-[#F7F9FC]">Max Alerts / Hour</label>
                         <span className="text-xs font-mono font-bold text-[#F6821F]">{maxAlertsPerHour} / hr</span>
                       </div>
-                      <p className="text-[11px] text-gray-500 mb-2">Maximum email dispatches per hour to protect quotas.</p>
+                      <p className="text-[11px] text-[#94A3B8] mb-2">Maximum email dispatches per hour to protect quotas.</p>
                       <input
                         type="range"
                         min="5"
                         max="50"
                         value={maxAlertsPerHour}
                         onChange={(e) => setMaxAlertsPerHour(Number(e.target.value))}
-                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#F6821F]"
+                        className="w-full h-1.5 bg-[#080D17] border border-[#223047] rounded-lg appearance-none cursor-pointer accent-[#F6821F]"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* 3. Authorized Incident Recipient Registry */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-2">
+                <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-6 backdrop-blur-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#223047] gap-2">
                     <div>
-                      <h3 className="text-base font-bold text-gray-900">Authorized Recipient Registry</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <h3 className="text-base font-bold text-[#F7F9FC]">Authorized Recipient Registry</h3>
+                      <p className="text-xs text-[#94A3B8] mt-0.5">
                         Only verified or administrator-approved demo recipients receive active incident alerts.
                       </p>
                     </div>
-                    <span className="text-xs text-gray-400 font-mono">Policy v{notifPolicy?.policy_version || 1}</span>
+                    <span className="text-xs text-[#64748B] font-mono">Policy v{notifPolicy?.policy_version || 1}</span>
                   </div>
 
                   {/* Add Recipient Form */}
-                  <div className="py-4 border-b border-gray-100 flex flex-col sm:flex-row items-center gap-3">
+                  <div className="py-4 border-b border-[#223047] flex flex-col sm:flex-row items-center gap-3">
                     <input
                       type="email"
                       placeholder="analyst@voxguard.security or oncall@company.com"
                       value={newRecipientEmail}
                       onChange={(e) => setNewRecipientEmail(e.target.value)}
-                      className="flex-1 w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                      className="flex-1 w-full px-3 py-2 text-xs bg-[#121C2D] border border-[#223047] rounded-lg text-[#F7F9FC] placeholder-[#64748B] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
                     />
                     <input
                       type="text"
                       placeholder="Role Label (e.g. Lead SOC On-Call)"
                       value={newRecipientLabel}
                       onChange={(e) => setNewRecipientLabel(e.target.value)}
-                      className="w-full sm:w-56 px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
+                      className="w-full sm:w-56 px-3 py-2 text-xs bg-[#121C2D] border border-[#223047] rounded-lg text-[#F7F9FC] placeholder-[#64748B] focus:outline-none focus:border-[#F6821F] focus:ring-1 focus:ring-[#F6821F]"
                     />
                     <Button
                       onClick={handleAddRecipient}
                       size="sm"
-                      className="w-full sm:w-auto bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs gap-1.5 cursor-pointer shrink-0"
+                      className="w-full sm:w-auto bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs font-semibold gap-1.5 cursor-pointer shrink-0 shadow-md shadow-[#F6821F]/20 h-9"
                     >
                       <Plus className="w-3.5 h-3.5" /> Add Recipient
                     </Button>
                   </div>
 
                   {/* Recipients List */}
-                  <div className="mt-4 divide-y divide-gray-100">
+                  <div className="mt-4 divide-y divide-[#223047]/60">
                     {recipients.length === 0 ? (
-                      <div className="py-6 text-center text-xs text-gray-400">
+                      <div className="py-6 text-center text-xs text-[#64748B]">
                         No notification recipients registered yet. Add an email address above.
                       </div>
                     ) : (
                       recipients.map((rec) => (
                         <div key={rec.id} className="py-3 flex items-center justify-between gap-3 text-xs">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-7 h-7 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center text-[#F6821F] font-bold text-xs shrink-0">
+                            <div className="w-7 h-7 rounded-lg bg-[#121C2D] border border-[#223047] flex items-center justify-center text-[#F6821F] font-bold text-xs shrink-0 font-mono">
                               {rec.email[0].toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-semibold text-gray-900 truncate">{rec.email}</p>
-                              <p className="text-[11px] text-gray-500">{rec.label}</p>
+                              <p className="font-semibold text-[#F7F9FC] truncate">{rec.email}</p>
+                              <p className="text-[11px] text-[#94A3B8]">{rec.label}</p>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
                             {rec.status === "VERIFIED" ? (
-                              <Badge className="bg-emerald-50 text-emerald-800 border-emerald-300 text-[10px] gap-1">
-                                <CheckCircle className="w-3 h-3 text-emerald-600" /> Verified
+                              <Badge className="bg-emerald-950/60 text-emerald-300 border-emerald-700/60 text-[10px] gap-1 font-mono">
+                                <CheckCircle className="w-3 h-3 text-emerald-400" /> Verified
                               </Badge>
                             ) : rec.status === "ADMIN_APPROVED_DEMO" ? (
-                              <Badge className="bg-blue-50 text-blue-800 border-blue-300 text-[10px] gap-1">
-                                <ShieldCheck className="w-3 h-3 text-blue-600" /> Admin Approved Demo
+                              <Badge className="bg-blue-950/60 text-blue-300 border-blue-700/60 text-[10px] gap-1 font-mono">
+                                <ShieldCheck className="w-3 h-3 text-blue-400" /> Admin Approved Demo
                               </Badge>
                             ) : (
-                              <Badge className="bg-amber-50 text-amber-800 border-amber-300 text-[10px]">
+                              <Badge className="bg-amber-950/60 text-amber-300 border-amber-700/60 text-[10px] font-mono">
                                 Pending Verification
                               </Badge>
                             )}
@@ -1110,7 +1110,7 @@ export default function SettingsPage() {
                                 onClick={() => handleVerifyRecipient(rec.email)}
                                 variant="outline"
                                 size="sm"
-                                className="text-[11px] h-7 px-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50 cursor-pointer"
+                                className="text-[11px] h-7 px-2 text-emerald-400 border-emerald-700/60 bg-emerald-950/30 hover:bg-emerald-900/50 cursor-pointer"
                               >
                                 Approve
                               </Button>
@@ -1120,7 +1120,7 @@ export default function SettingsPage() {
                               onClick={() => handleRemoveRecipient(rec.email)}
                               variant="ghost"
                               size="sm"
-                              className="text-[11px] h-7 px-2 text-gray-400 hover:text-red-600 cursor-pointer"
+                              className="text-[11px] h-7 px-2 text-[#64748B] hover:text-red-400 hover:bg-red-950/20 cursor-pointer"
                               title="Delete recipient"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1133,11 +1133,11 @@ export default function SettingsPage() {
                 </div>
 
                 {/* 4. Test Notification Dispatch & Live Status */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-3">
+                <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-6 backdrop-blur-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#223047] gap-3">
                     <div>
-                      <h3 className="text-base font-bold text-gray-900">Pipeline Verification & Test Dispatch</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <h3 className="text-base font-bold text-[#F7F9FC]">Pipeline Verification & Test Dispatch</h3>
+                      <p className="text-xs text-[#94A3B8] mt-0.5">
                         Privileged operation to confirm that notifications reach responder inboxes and phone email applications.
                       </p>
                     </div>
@@ -1145,9 +1145,9 @@ export default function SettingsPage() {
                     <Button
                       onClick={handleSendTestEmail}
                       disabled={testSending || recipients.length === 0}
-                      className="bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs gap-1.5 cursor-pointer shadow-sm shrink-0"
+                      className="bg-[#F6821F] hover:bg-[#E85D04] text-white text-xs font-semibold gap-1.5 cursor-pointer shadow-lg shadow-[#F6821F]/20 shrink-0 h-9 px-4"
                     >
-                      {testSending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5 text-[#F6821F]" />}
+                      {testSending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                       Send Test Email Alert
                     </Button>
                   </div>
@@ -1156,113 +1156,113 @@ export default function SettingsPage() {
                   {testResult && (
                     <div
                       className={cn(
-                        "mt-4 p-3 rounded-lg border text-xs flex items-center justify-between gap-3",
+                        "mt-4 p-3.5 rounded-xl border text-xs flex items-center justify-between gap-3",
                         testResult.status === "QUEUED" || testResult.status === "SENT"
-                          ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-                          : "bg-red-50 border-red-200 text-red-900"
+                          ? "bg-emerald-950/40 border-emerald-800/50 text-emerald-300"
+                          : "bg-red-950/40 border-red-800/50 text-red-300"
                       )}
                     >
                       <div className="flex items-center gap-2">
                         {testResult.status === "QUEUED" || testResult.status === "SENT" ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                         ) : (
-                          <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                          <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
                         )}
                         <span>{testResult.message}</span>
                       </div>
-                      <span className="text-[11px] text-gray-400 font-mono shrink-0">{testResult.timestamp}</span>
+                      <span className="text-[11px] text-[#64748B] font-mono shrink-0">{testResult.timestamp}</span>
                     </div>
                   )}
                 </div>
 
                 {/* 5. Delivery Audit Trail & Incident Dispatch Log */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-                  <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-6 backdrop-blur-md">
+                  <div className="flex items-center justify-between pb-4 border-b border-[#223047]">
                     <div>
-                      <h3 className="text-base font-bold text-gray-900">Incident Delivery Audit Trail</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">Immutable log of recent alert jobs, MTA provider confirmations, and retries.</p>
+                      <h3 className="text-base font-bold text-[#F7F9FC]">Incident Delivery Audit Trail</h3>
+                      <p className="text-xs text-[#94A3B8] mt-0.5">Immutable log of recent alert jobs, MTA provider confirmations, and retries.</p>
                     </div>
                     <Button
                       onClick={loadHistory}
                       variant="outline"
                       size="sm"
-                      className="text-xs gap-1 cursor-pointer"
+                      className="bg-[#121C2D] border-[#223047] text-[#94A3B8] hover:text-[#F7F9FC] text-xs gap-1.5 cursor-pointer h-8"
                     >
-                      <RefreshCw className={cn("w-3.5 h-3.5", historyLoading && "animate-spin")} /> Refresh Log
+                      <RefreshCw className={cn("w-3.5 h-3.5", historyLoading && "animate-spin text-[#F6821F]")} /> Refresh Log
                     </Button>
                   </div>
 
-                  <div className="overflow-x-auto mt-4">
+                  <div className="overflow-x-auto mt-4 rounded-lg border border-[#223047] overflow-hidden">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase tracking-wider bg-gray-50/50">
-                          <th className="py-2.5 px-3">Job ID</th>
+                        <tr className="border-b border-[#223047] text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider bg-[#080D17]">
+                          <th className="py-2.5 px-3 font-mono">Job ID</th>
                           <th className="py-2.5 px-3">Event Type</th>
                           <th className="py-2.5 px-3">Severity</th>
                           <th className="py-2.5 px-3">Recipient</th>
                           <th className="py-2.5 px-3">Delivery State</th>
-                          <th className="py-2.5 px-3">Timestamp</th>
+                          <th className="py-2.5 px-3 font-mono">Timestamp</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 font-mono text-[11px]">
+                      <tbody className="divide-y divide-[#223047]/60 font-mono text-[11px]">
                         {notificationHistory.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="py-6 text-center text-gray-400 font-sans text-xs">
+                            <td colSpan={6} className="py-8 text-center text-[#64748B] font-sans text-xs">
                               No recent alert dispatches recorded in database.
                             </td>
                           </tr>
                         ) : (
                           notificationHistory.map((job) => (
-                            <tr key={job.id} className="hover:bg-gray-50/50 transition-colors">
-                              <td className="py-2.5 px-3 text-gray-900 font-semibold">{job.id.slice(0, 14)}</td>
+                            <tr key={job.id} className="hover:bg-[#121C2D]/50 transition-colors">
+                              <td className="py-2.5 px-3 text-[#F7F9FC] font-semibold font-mono">{job.id.slice(0, 14)}</td>
                               <td className="py-2.5 px-3 font-sans">
-                                <span className="font-medium text-gray-800">{job.event_type}</span>
+                                <span className="font-medium text-[#E2E8F0]">{job.event_type}</span>
                                 {job.analysis_id && (
-                                  <span className="text-[10px] text-gray-400 block font-mono">Ref: {job.analysis_id}</span>
+                                  <span className="text-[10px] text-[#64748B] block font-mono">Ref: {job.analysis_id}</span>
                                 )}
                               </td>
                               <td className="py-2.5 px-3 font-sans">
                                 <Badge
                                   className={cn(
-                                    "text-[10px] font-medium border",
+                                    "text-[10px] font-medium border font-mono",
                                     job.severity === "CRITICAL"
-                                      ? "bg-red-50 text-red-700 border-red-200"
+                                      ? "bg-red-950/60 text-red-400 border-red-700/60"
                                       : job.severity === "WARNING"
-                                      ? "bg-amber-50 text-amber-700 border-amber-200"
-                                      : "bg-blue-50 text-blue-700 border-blue-200"
+                                      ? "bg-amber-950/60 text-amber-400 border-amber-700/60"
+                                      : "bg-blue-950/60 text-blue-400 border-blue-700/60"
                                   )}
                                 >
                                   {job.severity}
                                 </Badge>
                               </td>
-                              <td className="py-2.5 px-3 text-gray-700">{job.recipient_email}</td>
+                              <td className="py-2.5 px-3 text-[#94A3B8]">{job.recipient_email}</td>
                               <td className="py-2.5 px-3 font-sans">
                                 <Badge
                                   className={cn(
-                                    "text-[10px] font-medium border",
+                                    "text-[10px] font-medium border font-mono",
                                     job.status === "SENT"
-                                      ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                      ? "bg-emerald-950/60 text-emerald-300 border-emerald-700/60"
                                       : job.status === "SENDING" || job.status === "QUEUED"
-                                      ? "bg-blue-50 text-blue-800 border-blue-300"
+                                      ? "bg-blue-950/60 text-blue-300 border-blue-700/60"
                                       : job.status === "SUPPRESSED"
-                                      ? "bg-purple-50 text-purple-800 border-purple-300"
-                                      : "bg-red-50 text-red-800 border-red-300"
+                                      ? "bg-purple-950/60 text-purple-300 border-purple-700/60"
+                                      : "bg-red-950/60 text-red-300 border-red-700/60"
                                   )}
                                 >
                                   {job.status === "SENT" ? "Sent (Accepted)" : job.status}
                                 </Badge>
                                 {job.resend_message_id && (
-                                  <span className="text-[10px] text-gray-400 block font-mono">
+                                  <span className="text-[10px] text-[#64748B] block font-mono">
                                     ID: {job.resend_message_id.slice(0, 16)}
                                   </span>
                                 )}
                                 {job.error_category && job.status === "FAILED" && (
-                                  <span className="text-[10px] text-red-500 block font-mono">
+                                  <span className="text-[10px] text-red-400 block font-mono">
                                     {job.error_category}
                                   </span>
                                 )}
                               </td>
-                              <td className="py-2.5 px-3 text-gray-500 font-sans">{job.created_at}</td>
+                              <td className="py-2.5 px-3 text-[#64748B] font-mono">{job.created_at}</td>
                             </tr>
                           ))
                         )}
@@ -1272,29 +1272,29 @@ export default function SettingsPage() {
                 </div>
 
                 {/* 6. Legacy Quick Actions Card (Preserved) */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-                  <h3 className="text-base font-bold text-gray-900 mb-1">Telephony Incident Automations</h3>
-                  <p className="text-xs text-gray-500 mb-4">Real-time telecommunications stream mitigation actions.</p>
+                <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-6 backdrop-blur-md">
+                  <h3 className="text-base font-bold text-[#F7F9FC] mb-1">Telephony Incident Automations</h3>
+                  <p className="text-xs text-[#94A3B8] mb-4">Real-time telecommunications stream mitigation actions.</p>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                    <div className="flex items-center justify-between py-2 border-b border-[#223047]/60">
                       <div>
-                        <p className="text-xs font-semibold text-gray-900">Critical Alerts Only</p>
-                        <p className="text-[11px] text-gray-500">Suppress warnings and only dispatch alerts for verified synthetic deepfakes</p>
+                        <p className="text-xs font-semibold text-[#F7F9FC]">Critical Alerts Only</p>
+                        <p className="text-[11px] text-[#94A3B8]">Suppress warnings and only dispatch alerts for verified synthetic deepfakes</p>
                       </div>
                       <Toggle enabled={criticalOnly} onToggle={() => setCriticalOnly(!criticalOnly)} />
                     </div>
-                    <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                    <div className="flex items-center justify-between py-2 border-b border-[#223047]/60">
                       <div>
-                        <p className="text-xs font-semibold text-gray-900">Slack Webhook Integration</p>
-                        <p className="text-[11px] text-gray-500">Post immediate alerts to your dedicated incident response channel</p>
+                        <p className="text-xs font-semibold text-[#F7F9FC]">Slack Webhook Integration</p>
+                        <p className="text-[11px] text-[#94A3B8]">Post immediate alerts to your dedicated incident response channel</p>
                       </div>
                       <Toggle enabled={slackAlerts} onToggle={() => setSlackAlerts(!slackAlerts)} />
                     </div>
                     <div className="flex items-center justify-between py-2">
                       <div>
-                        <p className="text-xs font-semibold text-gray-900">Auto-Block on Deepfake</p>
-                        <p className="text-[11px] text-gray-500">Automatically terminate call audio when AASIST scores drop below threshold</p>
+                        <p className="text-xs font-semibold text-[#F7F9FC]">Auto-Block on Deepfake</p>
+                        <p className="text-[11px] text-[#94A3B8]">Automatically terminate call audio when AASIST scores drop below threshold</p>
                       </div>
                       <Toggle enabled={autoBlock} onToggle={() => setAutoBlock(!autoBlock)} />
                     </div>
@@ -1306,14 +1306,14 @@ export default function SettingsPage() {
             {activeSection === "api" && (
               <div className="space-y-6">
                 {/* Main API Card */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-gray-100 gap-4">
+                <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-6 backdrop-blur-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-[#223047] gap-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold text-gray-900">API Credentials & Usage-Based Billing</h2>
+                        <h2 className="text-lg font-bold text-[#F7F9FC]">API Credentials & Usage-Based Billing</h2>
                         {activeKey && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-700/60 font-mono">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                             {activeKey.plan_tier.toUpperCase() === "FREE" || activeKey.plan_tier.toUpperCase() === "FREE_TRIAL"
                               ? "Free Sandbox (550 Tokens)"
                               : activeKey.plan_tier.toUpperCase() === "PRO"
@@ -1322,15 +1322,15 @@ export default function SettingsPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Live audio stream analysis charged at <strong>₹2.00 / Minute</strong>. 550 Free Starter Tokens included.
+                      <p className="text-xs text-[#94A3B8] mt-1">
+                        Live audio stream analysis charged at <strong className="text-[#F6821F]">₹2.00 / Minute</strong>. 550 Free Starter Tokens included.
                       </p>
                     </div>
 
                     {!activeKey && (
                       <Button
                         onClick={handleOpenGenerateModal}
-                        className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md shadow-orange-500/20 gap-2 cursor-pointer"
+                        className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-lg shadow-[#F6821F]/20 gap-2 cursor-pointer font-semibold text-xs h-9 px-4"
                       >
                         <Zap className="w-4 h-4" /> Activate Free API Key (550 Tokens)
                       </Button>
@@ -1339,17 +1339,17 @@ export default function SettingsPage() {
 
                   {/* If no key generated yet */}
                   {!activeKey ? (
-                    <div className="py-10 flex flex-col items-center justify-center text-center max-w-md mx-auto">
-                      <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F6821F] mb-4 shadow-sm">
+                    <div className="py-12 flex flex-col items-center justify-center text-center max-w-md mx-auto">
+                      <div className="w-14 h-14 rounded-2xl bg-[#121C2D] border border-[#223047] flex items-center justify-center text-[#F6821F] mb-4 shadow-xl">
                         <Key className="w-7 h-7" />
                       </div>
-                      <h3 className="text-base font-bold text-gray-900 mb-1">No API Key Generated Yet</h3>
-                      <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-                        Activate your authenticated API credentials with <strong>550 Free Starter Tokens</strong> and <strong>15 Free Audio Minutes</strong>. Stream audio to `/api/analyze/live` with usage billing at <strong>₹2.00 / minute</strong>.
+                      <h3 className="text-base font-bold text-[#F7F9FC] mb-1">No API Key Generated Yet</h3>
+                      <p className="text-xs text-[#94A3B8] mb-6 leading-relaxed">
+                        Activate your authenticated API credentials with <strong className="text-[#F7F9FC]">550 Free Starter Tokens</strong> and <strong className="text-[#F7F9FC]">15 Free Audio Minutes</strong>. Stream audio to `/api/analyze/live` with usage billing at <strong className="text-[#F6821F]">₹2.00 / minute</strong>.
                       </p>
                       <Button
                         onClick={handleOpenGenerateModal}
-                        className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md shadow-orange-500/20 gap-2 cursor-pointer text-sm py-2.5 px-5"
+                        className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-lg shadow-[#F6821F]/20 gap-2 cursor-pointer text-xs font-semibold py-2.5 px-5 h-9"
                       >
                         <Zap className="w-4 h-4" /> Get Free API Key (550 Tokens)
                       </Button>
@@ -1360,8 +1360,8 @@ export default function SettingsPage() {
                       {/* Key Value with Show/Hide & Copy */}
                       <div>
                         <div className="flex justify-between items-center mb-2">
-                          <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Active SOC API Key</label>
-                          <span className="text-[11px] text-gray-400 font-mono">Header: x-api-key or Bearer</span>
+                          <label className="text-xs font-bold text-[#94A3B8] uppercase tracking-wider font-mono">Active SOC API Key</label>
+                          <span className="text-[11px] text-[#64748B] font-mono">Header: x-api-key or Bearer</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="relative flex-1">
@@ -1373,31 +1373,31 @@ export default function SettingsPage() {
                                   ? activeKey.key
                                   : `${activeKey.key.slice(0, 10)}${"•".repeat(24)}`
                               }
-                              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-mono text-gray-900 focus:outline-none"
+                              className="w-full px-3.5 py-2.5 bg-[#121C2D] border border-[#223047] rounded-lg text-sm font-mono text-[#F7F9FC] focus:outline-none"
                             />
                             <button
                               type="button"
                               onClick={() => setShowKeySecret(!showKeySecret)}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#64748B] hover:text-[#F7F9FC] cursor-pointer"
                               title={showKeySecret ? "Hide key" : "Reveal key"}
                             >
-                              {showKeySecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              {showKeySecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-[#F6821F]" />}
                             </button>
                           </div>
                           <Button
                             type="button"
                             onClick={handleCopyKey}
                             variant="outline"
-                            className="shrink-0 gap-1.5 border-gray-200 text-gray-700 hover:bg-gray-50 cursor-pointer"
+                            className="shrink-0 gap-1.5 bg-[#121C2D] border-[#223047] text-[#E2E8F0] hover:text-[#F6821F] hover:border-[#384D6B] cursor-pointer h-10 px-3"
                           >
                             {keyCopied ? (
                               <>
-                                <Check className="w-4 h-4 text-emerald-600" />
-                                <span className="text-emerald-700 font-medium text-xs">Copied!</span>
+                                <Check className="w-4 h-4 text-emerald-400" />
+                                <span className="text-emerald-400 font-medium text-xs">Copied!</span>
                               </>
                             ) : (
                               <>
-                                <Copy className="w-4 h-4 text-gray-500" />
+                                <Copy className="w-4 h-4 text-[#64748B]" />
                                 <span className="text-xs font-medium">Copy Key</span>
                               </>
                             )}
@@ -1408,69 +1408,69 @@ export default function SettingsPage() {
                       {/* Usage-Based Billing Dashboard Cards */}
                       <div className="grid sm:grid-cols-3 gap-4">
                         {/* Audio Streaming Minutes Card */}
-                        <div className="p-4 bg-orange-50/40 border border-orange-200/80 rounded-xl relative overflow-hidden">
+                        <div className="p-4 bg-[#121C2D]/60 border border-[#F6821F]/30 rounded-xl relative overflow-hidden">
                           <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-[#94A3B8] uppercase tracking-wider font-mono">
                               <Clock className="w-4 h-4 text-[#F6821F]" />
                               <span>Audio Streaming</span>
                             </div>
-                            <Badge className="bg-orange-100 text-[#F6821F] border-orange-200 text-[10px]">
+                            <Badge className="bg-[#F6821F]/10 text-[#F6821F] border border-[#F6821F]/30 text-[10px] font-mono">
                               ₹{activeKey.rate_per_min_inr?.toFixed(2) || "2.00"} / Min
                             </Badge>
                           </div>
                           <div className="mt-1">
-                            <span className="text-2xl font-black font-mono text-gray-900">
+                            <span className="text-2xl font-black font-mono text-[#F7F9FC]">
                               {(activeKey.minutes_remaining ?? 15.0).toFixed(1)}
                             </span>
-                            <span className="text-xs text-gray-500 font-medium ml-1.5">Minutes Available</span>
+                            <span className="text-xs text-[#94A3B8] font-medium ml-1.5">Minutes Available</span>
                           </div>
-                          <p className="text-[11px] text-gray-500 mt-2">
+                          <p className="text-[11px] text-[#64748B] mt-2 font-mono">
                             Billed per-minute for live call streams & audio uploads.
                           </p>
                         </div>
 
                         {/* Token Balance Card */}
-                        <div className="p-4 bg-gray-50 border border-gray-200/80 rounded-xl">
+                        <div className="p-4 bg-[#121C2D]/60 border border-amber-800/40 rounded-xl">
                           <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider">
-                              <Coins className="w-4 h-4 text-amber-500" />
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-[#94A3B8] uppercase tracking-wider font-mono">
+                              <Coins className="w-4 h-4 text-amber-400" />
                               <span>Token Quota</span>
                             </div>
-                            <span className="text-[10px] text-gray-500 font-medium">
+                            <span className="text-[10px] text-[#64748B] font-mono">
                               ~10 tokens/op
                             </span>
                           </div>
                           <div className="mt-1">
-                            <span className="text-2xl font-black font-mono text-gray-900">
+                            <span className="text-2xl font-black font-mono text-amber-400">
                               {activeKey.tokens_remaining.toLocaleString()}
                             </span>
-                            <span className="text-xs text-gray-400 font-mono ml-1.5">
+                            <span className="text-xs text-[#64748B] font-mono ml-1.5">
                               / {activeKey.tokens_total.toLocaleString()}
                             </span>
                           </div>
-                          <p className="text-[11px] text-gray-500 mt-2">
+                          <p className="text-[11px] text-[#64748B] mt-2 font-mono">
                             Used for NLP intent scanning and threat classification.
                           </p>
                         </div>
 
                         {/* Wallet Balance Card */}
-                        <div className="p-4 bg-emerald-50/40 border border-emerald-200/80 rounded-xl">
+                        <div className="p-4 bg-[#121C2D]/60 border border-emerald-800/40 rounded-xl">
                           <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider">
-                              <Wallet className="w-4 h-4 text-emerald-600" />
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-[#94A3B8] uppercase tracking-wider font-mono">
+                              <Wallet className="w-4 h-4 text-emerald-400" />
                               <span>Wallet Balance</span>
                             </div>
-                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]">
+                            <Badge className="bg-emerald-950/60 text-emerald-300 border-emerald-700/60 text-[10px] font-mono">
                               Prepaid INR
                             </Badge>
                           </div>
                           <div className="mt-1">
-                            <span className="text-2xl font-black font-mono text-emerald-700">
+                            <span className="text-2xl font-black font-mono text-emerald-400">
                               ₹{(activeKey.balance_inr ?? 0.0).toFixed(2)}
                             </span>
-                            <span className="text-xs text-emerald-600/80 font-medium ml-1.5">INR</span>
+                            <span className="text-xs text-emerald-400/80 font-medium ml-1.5 font-mono">INR</span>
                           </div>
-                          <p className="text-[11px] text-gray-500 mt-2">
+                          <p className="text-[11px] text-[#64748B] mt-2 font-mono">
                             Direct credit applied for overage streaming.
                           </p>
                         </div>
@@ -1486,7 +1486,7 @@ export default function SettingsPage() {
                               setTopupPaymentError(null);
                               setShowTopupModal(true);
                             }}
-                            className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-sm gap-1.5 cursor-pointer text-xs"
+                            className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-lg shadow-[#F6821F]/20 gap-1.5 cursor-pointer text-xs font-semibold h-9 px-3.5"
                           >
                             <Clock className="w-4 h-4" /> Recharge Minutes (₹2/Min)
                           </Button>
@@ -1498,22 +1498,22 @@ export default function SettingsPage() {
                               setShowTopupModal(true);
                             }}
                             variant="outline"
-                            className="border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm gap-1.5 cursor-pointer text-xs"
+                            className="bg-[#121C2D] border-[#223047] text-[#E2E8F0] hover:border-[#F6821F] shadow-sm gap-1.5 cursor-pointer text-xs h-9 px-3.5"
                           >
-                            <Coins className="w-4 h-4 text-amber-500" /> Buy Tokens (₹)
+                            <Coins className="w-4 h-4 text-amber-400" /> Buy Tokens (₹)
                           </Button>
                           <Button
                             onClick={handleOpenGenerateModal}
                             variant="outline"
-                            className="border-gray-200 text-gray-700 hover:bg-gray-50 text-xs gap-1.5 cursor-pointer"
+                            className="bg-[#121C2D] border-[#223047] text-[#94A3B8] hover:text-[#F7F9FC] text-xs gap-1.5 cursor-pointer h-9 px-3"
                           >
-                            <RefreshCw className="w-3.5 h-3.5 text-gray-500" /> Switch Plan
+                            <RefreshCw className="w-3.5 h-3.5 text-[#64748B]" /> Switch Plan
                           </Button>
                         </div>
                         <Button
                           onClick={handleRevokeKey}
                           variant="ghost"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs gap-1.5 cursor-pointer"
+                          className="text-red-400 hover:text-red-300 hover:bg-red-950/20 text-xs gap-1.5 cursor-pointer h-9 px-3"
                         >
                           <Trash2 className="w-3.5 h-3.5" /> Revoke Key
                         </Button>
@@ -1523,72 +1523,72 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Business Model Tier Breakdown & Feature Comparison */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+                <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-6 backdrop-blur-md">
                   <div className="mb-5">
-                    <h3 className="text-base font-bold text-gray-900">SaaS Business Model & Feature Entitlements</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <h3 className="text-base font-bold text-[#F7F9FC]">SaaS Business Model & Feature Entitlements</h3>
+                    <p className="text-xs text-[#94A3B8] mt-0.5">
                       Clear operational capabilities and quotas by plan tier in Indian Rupees (₹).
                     </p>
                   </div>
 
                   <div className="grid md:grid-cols-3 gap-4">
                     {/* Free Plan Summary */}
-                    <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/60 flex flex-col justify-between">
+                    <div className="p-4 rounded-xl border border-[#223047] bg-[#121C2D]/60 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Free Plan</span>
-                          <Badge variant="outline" className="text-[10px] bg-white">₹0 Forever</Badge>
+                          <span className="text-xs font-bold text-[#94A3B8] uppercase tracking-wider font-mono">Free Plan</span>
+                          <Badge variant="outline" className="text-[10px] bg-[#080D17] text-[#94A3B8] border-[#223047]">₹0 Forever</Badge>
                         </div>
-                        <div className="text-lg font-black text-gray-900 font-mono mb-2">
+                        <div className="text-lg font-black text-[#F7F9FC] font-mono mb-2">
                           550 Tokens
                         </div>
-                        <p className="text-[11px] text-gray-500 mb-3">
-                          15 Audio Minutes Free • Pay-As-You-Go Rate: <strong>₹2.00 / Min</strong>
+                        <p className="text-[11px] text-[#94A3B8] mb-3">
+                          15 Audio Minutes Free • Pay-As-You-Go: <strong className="text-[#F6821F]">₹2.00 / Min</strong>
                         </p>
-                        <div className="space-y-1.5 text-xs text-gray-600">
-                          <div className="flex items-center gap-1.5 text-emerald-700">
+                        <div className="space-y-1.5 text-xs text-[#94A3B8]">
+                          <div className="flex items-center gap-1.5 text-emerald-400">
                             <Check className="w-3.5 h-3.5" /> 1 Enrolled Target Voiceprint
                           </div>
-                          <div className="flex items-center gap-1.5 text-emerald-700">
+                          <div className="flex items-center gap-1.5 text-emerald-400">
                             <Check className="w-3.5 h-3.5" /> Core AASIST Voice Authenticity
                           </div>
-                          <div className="flex items-center gap-1.5 text-gray-400">
-                            <Lock className="w-3 h-3 text-gray-400" /> Multi-Speaker Matching Locked
+                          <div className="flex items-center gap-1.5 text-[#64748B]">
+                            <Lock className="w-3.5 h-3.5 text-[#64748B]" /> Multi-Speaker Matching Locked
                           </div>
-                          <div className="flex items-center gap-1.5 text-gray-400">
-                            <Lock className="w-3 h-3 text-gray-400" /> Auto-Block Webhooks Locked
+                          <div className="flex items-center gap-1.5 text-[#64748B]">
+                            <Lock className="w-3.5 h-3.5 text-[#64748B]" /> Auto-Block Webhooks Locked
                           </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Pro Plan Summary */}
-                    <div className="p-4 rounded-xl border-2 border-orange-200 bg-orange-50/20 flex flex-col justify-between relative">
+                    <div className="p-4 rounded-xl border-2 border-[#F6821F]/60 bg-[#0D1422] flex flex-col justify-between relative shadow-xl shadow-[#F6821F]/10">
                       <span className="absolute -top-2.5 right-4 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-[#F6821F] text-white">
                         Popular
                       </span>
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-[#F6821F] uppercase tracking-wider">Developer Pro</span>
-                          <span className="text-xs font-bold text-gray-900 font-mono">₹499 / Mo</span>
+                          <span className="text-xs font-bold text-[#F6821F] uppercase tracking-wider font-mono">Developer Pro</span>
+                          <span className="text-xs font-bold text-[#F7F9FC] font-mono">₹499 / Mo</span>
                         </div>
-                        <div className="text-lg font-black text-gray-900 font-mono mb-2">
+                        <div className="text-lg font-black text-[#F7F9FC] font-mono mb-2">
                           10,000 Tokens + 150 Mins
                         </div>
-                        <p className="text-[11px] text-gray-500 mb-3">
-                          Included Quota • Additional Audio: <strong>₹2.00 / Min</strong>
+                        <p className="text-[11px] text-[#94A3B8] mb-3">
+                          Included Quota • Additional Audio: <strong className="text-[#F6821F]">₹2.00 / Min</strong>
                         </p>
-                        <div className="space-y-1.5 text-xs text-gray-600">
-                          <div className="flex items-center gap-1.5 text-emerald-700">
+                        <div className="space-y-1.5 text-xs text-[#94A3B8]">
+                          <div className="flex items-center gap-1.5 text-emerald-400">
                             <Check className="w-3.5 h-3.5" /> Up to 15 Enrolled Voiceprints
                           </div>
-                          <div className="flex items-center gap-1.5 text-emerald-700">
+                          <div className="flex items-center gap-1.5 text-emerald-400">
                             <Check className="w-3.5 h-3.5" /> ECAPA-TDNN 192-dim Verification
                           </div>
-                          <div className="flex items-center gap-1.5 text-emerald-700">
+                          <div className="flex items-center gap-1.5 text-emerald-400">
                             <Check className="w-3.5 h-3.5" /> Auto-Block & Webhook Telemetry
                           </div>
-                          <div className="flex items-center gap-1.5 text-emerald-700">
+                          <div className="flex items-center gap-1.5 text-emerald-400">
                             <Check className="w-3.5 h-3.5" /> Priority Processing Queue (&lt;20ms)
                           </div>
                         </div>
@@ -1596,30 +1596,30 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Enterprise Plan Summary */}
-                    <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/20 flex flex-col justify-between">
+                    <div className="p-4 rounded-xl border border-indigo-900/50 bg-[#121C2D]/60 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Enterprise SOC</span>
-                          <span className="text-xs font-bold text-gray-900 font-mono">₹2,999 / Mo</span>
+                          <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider font-mono">Enterprise SOC</span>
+                          <span className="text-xs font-bold text-[#F7F9FC] font-mono">₹2,999 / Mo</span>
                         </div>
-                        <div className="text-lg font-black text-gray-900 font-mono mb-2">
+                        <div className="text-lg font-black text-[#F7F9FC] font-mono mb-2">
                           50,000 Tokens + 1,000 Mins
                         </div>
-                        <p className="text-[11px] text-gray-500 mb-3">
-                          Discounted Overage Rate: <strong>₹1.50 / Min</strong>
+                        <p className="text-[11px] text-[#94A3B8] mb-3">
+                          Discounted Overage Rate: <strong className="text-indigo-400">₹1.50 / Min</strong>
                         </p>
-                        <div className="space-y-1.5 text-xs text-gray-700">
-                          <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
-                            <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> ALL FEATURES UNLOCKED
+                        <div className="space-y-1.5 text-xs text-[#E2E8F0]">
+                          <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                            <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> ALL FEATURES UNLOCKED
                           </div>
-                          <div className="flex items-center gap-1.5 text-indigo-900">
-                            <Check className="w-3.5 h-3.5 text-indigo-600" /> Unlimited Enrolled Profiles
+                          <div className="flex items-center gap-1.5 text-indigo-300">
+                            <Check className="w-3.5 h-3.5 text-indigo-400" /> Unlimited Enrolled Profiles
                           </div>
-                          <div className="flex items-center gap-1.5 text-indigo-900">
-                            <Check className="w-3.5 h-3.5 text-indigo-600" /> Dedicated Zero-Wait Pipeline
+                          <div className="flex items-center gap-1.5 text-indigo-300">
+                            <Check className="w-3.5 h-3.5 text-indigo-400" /> Dedicated Zero-Wait Pipeline
                           </div>
-                          <div className="flex items-center gap-1.5 text-indigo-900">
-                            <Check className="w-3.5 h-3.5 text-indigo-600" /> Forensic Incident PDF Dossiers
+                          <div className="flex items-center gap-1.5 text-indigo-300">
+                            <Check className="w-3.5 h-3.5 text-indigo-400" /> Forensic Incident PDF Dossiers
                           </div>
                         </div>
                       </div>
@@ -1628,9 +1628,9 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Webhook Endpoint Configuration */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-                  <h3 className="text-base font-bold text-gray-900 mb-1">Webhook Endpoint URL</h3>
-                  <p className="text-xs text-gray-500 mb-4">
+                <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-6 backdrop-blur-md">
+                  <h3 className="text-base font-bold text-[#F7F9FC] mb-1">Webhook Endpoint URL</h3>
+                  <p className="text-xs text-[#94A3B8] mb-4">
                     External telemetry endpoint where AMVTF dispatches real-time synthetic deepfake alerts and verdicts.
                   </p>
                   <div>
@@ -1638,7 +1638,7 @@ export default function SettingsPage() {
                       type="text"
                       value={webhookUrl}
                       onChange={(e) => setWebhookUrl(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-mono text-gray-800 focus:bg-white focus:outline-none focus:border-[#F6821F] transition-colors"
+                      className="w-full px-3.5 py-2.5 bg-[#121C2D] border border-[#223047] rounded-lg text-sm font-mono text-[#F7F9FC] focus:outline-none focus:border-[#F6821F] transition-colors"
                       placeholder="https://your-api.com/webhooks/voice-alerts"
                     />
                   </div>
@@ -1647,34 +1647,41 @@ export default function SettingsPage() {
             )}
 
             {activeSection === "general" && (
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-1">AMVTF Engine Architecture</h2>
-                <p className="text-sm text-gray-500 mb-6">System intelligence specifications.</p>
+              <div className="cyber-panel bg-[#0D1422]/90 border border-[#223047] rounded-xl shadow-xl p-6 backdrop-blur-md">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-[#F6821F]/10 text-[#F6821F] border border-[#F6821F]/30">
+                    <Globe className="w-3 h-3 text-[#F6821F]" /> Architecture Spec
+                  </span>
+                  <span className="text-[#64748B] text-xs font-mono">•</span>
+                  <span className="text-[#94A3B8] text-xs font-mono">AMVTF v2.4 Engine</span>
+                </div>
+                <h2 className="text-lg font-bold text-[#F7F9FC] tracking-tight mb-1">AMVTF Engine Architecture</h2>
+                <p className="text-xs text-[#94A3B8] mb-6">Real-time system intelligence specifications and neural framework mapping.</p>
 
                 <div className="grid sm:grid-cols-2 gap-4 text-xs">
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="font-semibold text-gray-500 block">Backend Framework</span>
-                    <span className="font-bold text-gray-900 text-sm">Python 3.11 / FastAPI / Uvicorn</span>
+                  <div className="p-3.5 bg-[#121C2D] rounded-xl border border-[#223047]">
+                    <span className="font-semibold text-[#64748B] block font-mono text-[11px] uppercase">Backend Framework</span>
+                    <span className="font-bold text-[#F7F9FC] text-sm font-mono">Python 3.11 / FastAPI / Uvicorn</span>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="font-semibold text-gray-500 block">Database Storage</span>
-                    <span className="font-bold text-gray-900 text-sm">Cloud PostgreSQL (Supabase) / SQLite</span>
+                  <div className="p-3.5 bg-[#121C2D] rounded-xl border border-[#223047]">
+                    <span className="font-semibold text-[#64748B] block font-mono text-[11px] uppercase">Database Storage</span>
+                    <span className="font-bold text-[#F7F9FC] text-sm font-mono">Cloud PostgreSQL (Supabase) / SQLite</span>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="font-semibold text-gray-500 block">Authenticity Engine</span>
-                    <span className="font-bold text-gray-900 text-sm">Multi-Platform AASIST Live Classifier</span>
+                  <div className="p-3.5 bg-[#121C2D] rounded-xl border border-[#223047]">
+                    <span className="font-semibold text-[#64748B] block font-mono text-[11px] uppercase">Authenticity Engine</span>
+                    <span className="font-bold text-emerald-400 text-sm font-mono">Multi-Platform AASIST Live Classifier</span>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="font-semibold text-gray-500 block">Speaker Identity</span>
-                    <span className="font-bold text-gray-900 text-sm">ECAPA-TDNN 192-dim Cosine Match</span>
+                  <div className="p-3.5 bg-[#121C2D] rounded-xl border border-[#223047]">
+                    <span className="font-semibold text-[#64748B] block font-mono text-[11px] uppercase">Speaker Identity</span>
+                    <span className="font-bold text-[#F7F9FC] text-sm font-mono">ECAPA-TDNN 192-dim Cosine Match</span>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="font-semibold text-gray-500 block">Context Engine</span>
-                    <span className="font-bold text-gray-900 text-sm">DistilBERT Intent Classifier</span>
+                  <div className="p-3.5 bg-[#121C2D] rounded-xl border border-[#223047]">
+                    <span className="font-semibold text-[#64748B] block font-mono text-[11px] uppercase">Context Engine</span>
+                    <span className="font-bold text-[#F7F9FC] text-sm font-mono">DistilBERT Intent Classifier</span>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="font-semibold text-gray-500 block">Pay-As-You-Go Billing</span>
-                    <span className="font-bold text-[#F6821F] text-sm">₹2.00 / Minute (Audio Streams)</span>
+                  <div className="p-3.5 bg-[#121C2D] rounded-xl border border-[#223047]">
+                    <span className="font-semibold text-[#64748B] block font-mono text-[11px] uppercase">Pay-As-You-Go Billing</span>
+                    <span className="font-bold text-[#F6821F] text-sm font-mono">₹2.00 / Minute (Audio Streams)</span>
                   </div>
                 </div>
               </div>
@@ -1684,19 +1691,19 @@ export default function SettingsPage() {
       </main>
 
       {/* ─── MODAL 1: PLAN SELECTION & CHECKOUT MODAL (INR ONLY) ─── */}
-{showPlanModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-2xl overflow-hidden relative">
+      {showPlanModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#0D1422] rounded-2xl shadow-2xl border border-[#223047] w-full max-w-2xl overflow-hidden relative text-[#F7F9FC]">
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <div className="p-6 border-b border-[#1E293B] flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-gray-900">
+                <h3 className="text-base font-bold text-[#F7F9FC]">
                   {checkoutStep === "SELECT" && "Select API Key Plan"}
                   {checkoutStep === "COLLECT" && `Initiate UPI Collect — ₹${selectedPlan === "PRO" ? "499.00" : "2,999.00"}`}
                   {checkoutStep === "VERIFY_UTR" && "Approve UPI Payment & Verify UTR"}
                   {checkoutStep === "RECEIPT" && "Official Payment Receipt & Activation"}
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-[#94A3B8] mt-0.5">
                   {checkoutStep === "SELECT" && "All amounts in Indian Rupees (₹). 15 Audio Mins Free • Ongoing usage ₹2.00/min."}
                   {checkoutStep === "COLLECT" && "Dispatches a live UPI collect request to your Google Pay, PhonePe, or Paytm app"}
                   {checkoutStep === "VERIFY_UTR" && "Approve payment on your phone, then verify your 12-digit bank UTR receipt"}
@@ -1705,7 +1712,7 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={() => setShowPlanModal(false)}
-                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-1.5 text-[#94A3B8] hover:text-[#F7F9FC] rounded-lg hover:bg-[#121C2D] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1714,8 +1721,8 @@ export default function SettingsPage() {
             {/* Modal Body */}
             <div className="p-6">
               {paymentError && (
-                <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                <div className="mb-4 p-3 rounded-lg bg-red-950/40 border border-red-500/40 text-red-300 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
                   <span>{paymentError}</span>
                 </div>
               )}
@@ -1724,29 +1731,29 @@ export default function SettingsPage() {
               {checkoutStep === "SELECT" && (
                 <div className="grid sm:grid-cols-3 gap-4">
                   {/* Free Sandbox Plan Card */}
-                  <div className="border border-gray-200 rounded-xl p-4 flex flex-col justify-between hover:border-gray-300 transition-all bg-gray-50/50">
+                  <div className="border border-[#223047] rounded-xl p-4 flex flex-col justify-between hover:border-[#334155] transition-all bg-[#121C2D]/60">
                     <div>
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-gray-200 text-gray-700 mb-2">
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#223047] text-[#94A3B8] mb-2 font-mono">
                         Free Sandbox
                       </span>
-                      <h4 className="text-base font-bold text-gray-900">Free Plan</h4>
+                      <h4 className="text-base font-bold text-[#F7F9FC]">Free Plan</h4>
                       <div className="mt-2 mb-3">
-                        <span className="text-2xl font-black text-gray-900">₹0</span>
-                        <span className="text-xs text-gray-500"> / forever</span>
+                        <span className="text-2xl font-black text-[#F7F9FC]">₹0</span>
+                        <span className="text-xs text-[#94A3B8]"> / forever</span>
                       </div>
-                      <div className="p-2 bg-white rounded-lg border border-gray-200/80 mb-3 text-center">
+                      <div className="p-2 bg-[#080D17] rounded-lg border border-[#223047] mb-3 text-center">
                         <span className="text-sm font-extrabold text-[#F6821F] font-mono">550 Free Tokens</span>
-                        <span className="text-[10px] text-gray-500 block">15 Audio Mins Free • ₹2/Min</span>
+                        <span className="text-[10px] text-[#94A3B8] block">15 Audio Mins Free • ₹2/Min</span>
                       </div>
-                      <ul className="text-[11px] text-gray-600 space-y-1.5 mb-4">
+                      <ul className="text-[11px] text-[#94A3B8] space-y-1.5 mb-4">
                         <li className="flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Standard AASIST GNN
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Standard AASIST GNN
                         </li>
                         <li className="flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> 1 Voiceprint Profile
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> 1 Voiceprint Profile
                         </li>
                         <li className="flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Instant Activation
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Instant Activation
                         </li>
                       </ul>
                     </div>
@@ -1754,81 +1761,81 @@ export default function SettingsPage() {
                       onClick={() => handleSelectPlan("FREE")}
                       disabled={isProcessing}
                       variant="outline"
-                      className="w-full text-xs font-semibold cursor-pointer border-gray-300 hover:bg-gray-100"
+                      className="w-full text-xs font-semibold cursor-pointer border-[#223047] text-[#F7F9FC] hover:bg-[#1E293B]"
                     >
                       {isProcessing && selectedPlan === "FREE" ? "Activating..." : "Activate Free (550 Tokens)"}
                     </Button>
                   </div>
 
                   {/* Pro Plan Card */}
-                  <div className="border-2 border-[#F6821F] rounded-xl p-4 flex flex-col justify-between hover:shadow-md transition-all relative bg-orange-50/20">
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#F6821F] text-white shadow-sm">
+                  <div className="border-2 border-[#F6821F] rounded-xl p-4 flex flex-col justify-between hover:shadow-lg hover:shadow-[#F6821F]/10 transition-all relative bg-[#F6821F]/5">
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#F6821F] text-white shadow-sm font-mono">
                       Most Popular
                     </span>
                     <div>
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-[#F6821F] mb-2 mt-1">
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#F6821F]/20 text-[#F6821F] mb-2 mt-1 font-mono">
                         Telephony Pro
                       </span>
-                      <h4 className="text-base font-bold text-gray-900">Developer Pro</h4>
+                      <h4 className="text-base font-bold text-[#F7F9FC]">Developer Pro</h4>
                       <div className="mt-2 mb-3">
-                        <span className="text-2xl font-black text-gray-900">₹499</span>
-                        <span className="text-xs text-gray-500"> / month</span>
+                        <span className="text-2xl font-black text-[#F7F9FC]">₹499</span>
+                        <span className="text-xs text-[#94A3B8]"> / month</span>
                       </div>
-                      <div className="p-2 bg-white rounded-lg border border-orange-200 mb-3 text-center shadow-xs">
+                      <div className="p-2 bg-[#080D17] rounded-lg border border-[#F6821F]/30 mb-3 text-center shadow-xs">
                         <span className="text-sm font-extrabold text-[#F6821F] font-mono">10,000 Tokens</span>
-                        <span className="text-[10px] text-gray-500 block">150 Audio Mins Included</span>
+                        <span className="text-[10px] text-[#94A3B8] block">150 Audio Mins Included</span>
                       </div>
-                      <ul className="text-[11px] text-gray-600 space-y-1.5 mb-4">
+                      <ul className="text-[11px] text-[#94A3B8] space-y-1.5 mb-4">
                         <li className="flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Priority Queue (&lt;20ms)
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Priority Queue (&lt;20ms)
                         </li>
                         <li className="flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Up to 15 Voiceprints
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Up to 15 Voiceprints
                         </li>
                         <li className="flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Auto-Block & Webhooks
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Auto-Block & Webhooks
                         </li>
                       </ul>
                     </div>
                     <Button
                       onClick={() => handleSelectPlan("PRO")}
-                      className="w-full text-xs font-semibold bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-sm cursor-pointer"
+                      className="w-full text-xs font-semibold bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md shadow-[#F6821F]/20 cursor-pointer"
                     >
                       Choose Pro (₹499)
                     </Button>
                   </div>
 
                   {/* Enterprise Plan Card */}
-                  <div className="border border-indigo-200 rounded-xl p-4 flex flex-col justify-between hover:border-indigo-300 transition-all bg-indigo-50/20">
+                  <div className="border border-indigo-500/30 rounded-xl p-4 flex flex-col justify-between hover:border-indigo-500/60 transition-all bg-indigo-950/20">
                     <div>
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700 mb-2">
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 mb-2 font-mono">
                         Enterprise
                       </span>
-                      <h4 className="text-base font-bold text-gray-900">Enterprise SOC</h4>
+                      <h4 className="text-base font-bold text-[#F7F9FC]">Enterprise SOC</h4>
                       <div className="mt-2 mb-3">
-                        <span className="text-2xl font-black text-gray-900">₹2,999</span>
-                        <span className="text-xs text-gray-500"> / month</span>
+                        <span className="text-2xl font-black text-[#F7F9FC]">₹2,999</span>
+                        <span className="text-xs text-[#94A3B8]"> / month</span>
                       </div>
-                      <div className="p-2 bg-white rounded-lg border border-indigo-200 mb-3 text-center">
-                        <span className="text-sm font-extrabold text-indigo-700 font-mono">50,000 Tokens</span>
-                        <span className="text-[10px] text-gray-500 block">1,000 Mins Included (₹1.50/min)</span>
+                      <div className="p-2 bg-[#080D17] rounded-lg border border-indigo-500/30 mb-3 text-center">
+                        <span className="text-sm font-extrabold text-indigo-400 font-mono">50,000 Tokens</span>
+                        <span className="text-[10px] text-[#94A3B8] block">1,000 Mins Included (₹1.50/min)</span>
                       </div>
-                      <ul className="text-[11px] text-gray-600 space-y-1.5 mb-4">
-                        <li className="flex items-center gap-1.5 font-semibold text-emerald-700">
+                      <ul className="text-[11px] text-[#94A3B8] space-y-1.5 mb-4">
+                        <li className="flex items-center gap-1.5 font-semibold text-emerald-400">
                           <Check className="w-3.5 h-3.5 shrink-0" /> ALL FEATURES UNLOCKED
                         </li>
                         <li className="flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Unlimited Voiceprints
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Unlimited Voiceprints
                         </li>
                         <li className="flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Forensic Dossier PDFs
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Forensic Dossier PDFs
                         </li>
                       </ul>
                     </div>
                     <Button
                       onClick={() => handleSelectPlan("ENTERPRISE")}
                       variant="outline"
-                      className="w-full text-xs font-semibold cursor-pointer border-indigo-300 text-indigo-800 hover:bg-indigo-50"
+                      className="w-full text-xs font-semibold cursor-pointer border-indigo-500/40 text-indigo-300 hover:bg-indigo-950/50"
                     >
                       Choose Enterprise (₹2,999)
                     </Button>
@@ -1839,12 +1846,12 @@ export default function SettingsPage() {
               {/* STEP 2: UPI COLLECT REQUEST DISPATCH FORM */}
               {checkoutStep === "COLLECT" && (
                 <div className="space-y-4">
-                  <div className="p-4 bg-orange-50/40 border border-orange-200 rounded-xl flex items-center justify-between">
+                  <div className="p-4 bg-[#F6821F]/10 border border-[#F6821F]/30 rounded-xl flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-bold text-gray-900 block">
+                      <span className="text-xs font-bold text-[#F7F9FC] block">
                         {selectedPlan === "PRO" ? "Developer Pro (10,000 Tokens + 150 Mins)" : "Enterprise SOC (50,000 Tokens + 1,000 Mins)"}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-[#94A3B8]">
                         🎁 First 15 Audio Mins Free • Ongoing usage ₹{selectedPlan === "PRO" ? "2.00" : "1.50"} / min
                       </span>
                     </div>
@@ -1853,22 +1860,22 @@ export default function SettingsPage() {
                     </span>
                   </div>
 
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+                  <div className="p-4 bg-[#121C2D] border border-[#223047] rounded-xl space-y-3">
                     <div>
-                      <label className="text-xs font-semibold text-gray-700 block mb-1">
-                        Payer Full Name / Organization <span className="text-gray-400 font-normal">(Optional)</span>
+                      <label className="text-xs font-semibold text-[#F7F9FC] block mb-1">
+                        Payer Full Name / Organization <span className="text-[#64748B] font-normal">(Optional)</span>
                       </label>
                       <input
                         type="text"
                         value={payerName}
                         onChange={(e) => setPayerName(e.target.value)}
                         placeholder="e.g. Mahesh Kumar (SecOps Lead)"
-                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-xs text-gray-800 focus:outline-none focus:border-[#F6821F]"
+                        className="w-full px-3 py-2 bg-[#080D17] border border-[#223047] rounded-md text-xs text-[#F7F9FC] placeholder-[#64748B] focus:outline-none focus:border-[#F6821F]"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs font-semibold text-gray-700 block mb-1">
+                      <label className="text-xs font-semibold text-[#F7F9FC] block mb-1">
                         Account Email Address <span className="text-[#F6821F]">*</span>
                       </label>
                       <input
@@ -1876,12 +1883,12 @@ export default function SettingsPage() {
                         value={payerEmail}
                         onChange={(e) => setPayerEmail(e.target.value)}
                         placeholder="e.g. mahesh@organization.com (Credentials will be sent here)"
-                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-xs text-gray-800 focus:outline-none focus:border-[#F6821F]"
+                        className="w-full px-3 py-2 bg-[#080D17] border border-[#223047] rounded-md text-xs text-[#F7F9FC] placeholder-[#64748B] focus:outline-none focus:border-[#F6821F]"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs font-semibold text-gray-700 block mb-1">
+                      <label className="text-xs font-semibold text-[#F7F9FC] block mb-1">
                         Your UPI ID / VPA <span className="text-[#F6821F]">*</span>
                       </label>
                       <div className="relative">
@@ -1890,12 +1897,12 @@ export default function SettingsPage() {
                           value={upiId}
                           onChange={(e) => { setUpiId(e.target.value); setPaymentError(null); }}
                           placeholder="e.g. username@okhdfcbank or 9876543210@paytm"
-                          className="w-full px-3 py-2 pl-9 bg-white border border-gray-200 rounded-md text-xs font-mono text-gray-800 focus:outline-none focus:border-[#F6821F]"
+                          className="w-full px-3 py-2 pl-9 bg-[#080D17] border border-[#223047] rounded-md text-xs font-mono text-[#F7F9FC] placeholder-[#64748B] focus:outline-none focus:border-[#F6821F]"
                         />
-                        <Smartphone className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" />
+                        <Smartphone className="w-4 h-4 text-[#64748B] absolute left-2.5 top-2.5" />
                       </div>
-                      <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
-                        <Lock className="w-3 h-3 text-emerald-600" />
+                      <p className="text-[11px] text-[#94A3B8] mt-1 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-emerald-400" />
                         Collect request will be dispatched to Google Pay, PhonePe, Paytm, or BHIM.
                       </p>
                     </div>
@@ -1906,7 +1913,7 @@ export default function SettingsPage() {
                       type="button"
                       variant="ghost"
                       onClick={() => { setCheckoutStep("SELECT"); setPaymentError(null); }}
-                      className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+                      className="text-xs text-[#94A3B8] hover:text-[#F7F9FC] hover:bg-[#121C2D] cursor-pointer"
                     >
                       &larr; Back to Plans
                     </Button>
@@ -1914,7 +1921,7 @@ export default function SettingsPage() {
                       type="button"
                       disabled={isProcessing}
                       onClick={handleSendUpiCollectRequest}
-                      className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md gap-2 cursor-pointer text-xs py-2 px-5"
+                      className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md shadow-[#F6821F]/20 gap-2 cursor-pointer text-xs py-2 px-5"
                     >
                       {isProcessing ? (
                         <span>Dispatching Collect Request...</span>
@@ -1930,11 +1937,11 @@ export default function SettingsPage() {
               {checkoutStep === "VERIFY_UTR" && activePaymentOrder && (
                 <div className="space-y-4">
                   {/* Status Banner */}
-                  <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-                    <div className="w-3 h-3 rounded-full bg-amber-500 animate-ping mt-1 shrink-0" />
+                  <div className="p-3.5 bg-amber-950/30 border border-amber-500/30 rounded-xl flex items-start gap-3">
+                    <div className="w-3 h-3 rounded-full bg-[#F6821F] animate-ping mt-1 shrink-0" />
                     <div>
-                      <h5 className="text-xs font-bold text-amber-900">UPI Collect Request Active</h5>
-                      <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                      <h5 className="text-xs font-bold text-amber-200">UPI Collect Request Active</h5>
+                      <p className="text-[11px] text-amber-300/80 mt-0.5 leading-relaxed">
                         A payment request of <b>₹{activePaymentOrder.amount_inr.toFixed(2)}</b> was sent to <b>{activePaymentOrder.payer_upi_id}</b>.
                         Please open your UPI app and approve payment to <b>{activePaymentOrder.merchant_vpa}</b>.
                       </p>
@@ -1942,23 +1949,23 @@ export default function SettingsPage() {
                   </div>
 
                   {/* QR Code & Direct Payment Info */}
-                  <div className="grid sm:grid-cols-2 gap-4 p-4 bg-gray-50 border border-gray-200 rounded-xl items-center">
+                  <div className="grid sm:grid-cols-2 gap-4 p-4 bg-[#121C2D] border border-[#223047] rounded-xl items-center">
                     <div className="flex flex-col items-center justify-center p-3 bg-white rounded-lg border border-gray-200 shadow-xs text-center">
                       <div className="p-2 bg-white rounded border border-gray-100 mb-2">
                         <QRCodeSVG value={activePaymentOrder.upi_intent_uri} size={130} level="M" />
                       </div>
-                      <span className="text-[10px] font-semibold text-gray-500">Scan via GPay / PhonePe / Paytm</span>
+                      <span className="text-[10px] font-semibold text-gray-700 font-mono">Scan via GPay / PhonePe / Paytm</span>
                     </div>
 
                     <div className="space-y-2 text-xs">
                       <div>
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block">Merchant VPA</span>
-                        <div className="flex items-center justify-between font-mono font-bold text-gray-900 bg-white px-2.5 py-1.5 rounded border border-gray-200">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B] block font-mono">Merchant VPA</span>
+                        <div className="flex items-center justify-between font-mono font-bold text-[#F7F9FC] bg-[#080D17] px-2.5 py-1.5 rounded border border-[#223047]">
                           <span>{activePaymentOrder.merchant_vpa}</span>
                           <button
                             type="button"
                             onClick={() => handleCopyText(activePaymentOrder.merchant_vpa, "vpa")}
-                            className="text-gray-400 hover:text-[#F6821F] p-0.5"
+                            className="text-[#64748B] hover:text-[#F6821F] p-0.5"
                             title="Copy UPI ID"
                           >
                             <Copy className="w-3.5 h-3.5" />
@@ -1967,12 +1974,12 @@ export default function SettingsPage() {
                       </div>
 
                       <div>
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block">Order Reference</span>
-                        <span className="font-mono text-gray-600 block">{activePaymentOrder.order_id}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B] block font-mono">Order Reference</span>
+                        <span className="font-mono text-[#94A3B8] block">{activePaymentOrder.order_id}</span>
                       </div>
 
                       <div className="pt-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 block">Approval Window</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B] block font-mono">Approval Window</span>
                         <span className="text-sm font-mono font-extrabold text-[#F6821F]">
                           ⏱ {Math.floor(countdownSeconds / 60)}:{(countdownSeconds % 60).toString().padStart(2, "0")} Remaining
                         </span>
@@ -1981,10 +1988,10 @@ export default function SettingsPage() {
                   </div>
 
                   {/* 12-Digit Bank UTR Input */}
-                  <div className="p-4 bg-white border-2 border-orange-200 rounded-xl space-y-2">
-                    <label className="text-xs font-bold text-gray-900 flex items-center justify-between">
+                  <div className="p-4 bg-[#121C2D] border-2 border-[#F6821F]/40 rounded-xl space-y-2">
+                    <label className="text-xs font-bold text-[#F7F9FC] flex items-center justify-between">
                       <span>Enter 12-Digit Bank Reference (UTR) Number</span>
-                      <span className="text-[10px] text-gray-400 font-normal">Found in UPI App receipt / SMS</span>
+                      <span className="text-[10px] text-[#64748B] font-normal">Found in UPI App receipt / SMS</span>
                     </label>
                     <div className="relative">
                       <input
@@ -1992,11 +1999,11 @@ export default function SettingsPage() {
                         value={utrNumber}
                         onChange={(e) => { setUtrNumber(e.target.value.trim()); setPaymentError(null); }}
                         placeholder="e.g. 425519827103"
-                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-xs font-mono font-bold tracking-wider text-gray-900 focus:outline-none focus:border-[#F6821F]"
+                        className="w-full px-3 py-2 bg-[#080D17] border border-[#223047] rounded-md text-xs font-mono font-bold tracking-wider text-[#F7F9FC] placeholder-[#64748B] focus:outline-none focus:border-[#F6821F]"
                       />
                     </div>
-                    <p className="text-[11px] text-gray-500">
-                      Demo / testing reference: <span className="font-mono font-bold text-gray-700">425519827103</span>
+                    <p className="text-[11px] text-[#94A3B8]">
+                      Demo / testing reference: <span className="font-mono font-bold text-[#F7F9FC]">425519827103</span>
                     </p>
                   </div>
 
@@ -2005,7 +2012,7 @@ export default function SettingsPage() {
                       type="button"
                       variant="ghost"
                       onClick={() => setCheckoutStep("COLLECT")}
-                      className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+                      className="text-xs text-[#94A3B8] hover:text-[#F7F9FC] hover:bg-[#121C2D] cursor-pointer"
                     >
                       &larr; Modify UPI ID
                     </Button>
@@ -2029,13 +2036,13 @@ export default function SettingsPage() {
               {checkoutStep === "RECEIPT" && activationResult && (
                 <div className="space-y-4">
                   {/* Verified Header */}
-                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <div className="p-4 bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
                       <Check className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-emerald-900">Payment Verified & Key Issued!</h4>
-                      <p className="text-xs text-emerald-700 mt-0.5">
+                      <h4 className="text-sm font-bold text-emerald-300">Payment Verified & Key Issued!</h4>
+                      <p className="text-xs text-emerald-400/80 mt-0.5">
                         ₹{activePaymentOrder?.amount_inr.toFixed(2)} received via UPI (UTR: {activationResult.utr_reference}).
                       </p>
                     </div>
@@ -2043,27 +2050,27 @@ export default function SettingsPage() {
 
                   {/* Provisioned User Credentials (If generated) */}
                   {activationResult.user_credentials && (
-                    <div className="p-4 bg-indigo-50/50 border border-indigo-200 rounded-xl space-y-2">
+                    <div className="p-4 bg-indigo-950/40 border border-indigo-500/30 rounded-xl space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
-                          <UserCheck className="w-3.5 h-3.5 text-indigo-600" /> Account Login Credentials Provisioned
+                        <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                          <UserCheck className="w-3.5 h-3.5 text-indigo-400" /> Account Login Credentials Provisioned
                         </span>
-                        <span className="text-[10px] text-indigo-600 font-semibold">Save These Credentials</span>
+                        <span className="text-[10px] text-indigo-400 font-semibold font-mono">Save These Credentials</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                        <div className="p-2 bg-white rounded border border-indigo-100">
-                          <span className="text-[10px] text-gray-400 block font-sans">Username</span>
-                          <span className="font-bold text-gray-900">{activationResult.user_credentials.username}</span>
+                        <div className="p-2 bg-[#080D17] rounded border border-[#223047]">
+                          <span className="text-[10px] text-[#64748B] block font-sans">Username</span>
+                          <span className="font-bold text-[#F7F9FC]">{activationResult.user_credentials.username}</span>
                         </div>
-                        <div className="p-2 bg-white rounded border border-indigo-100 flex items-center justify-between">
+                        <div className="p-2 bg-[#080D17] rounded border border-[#223047] flex items-center justify-between">
                           <div>
-                            <span className="text-[10px] text-gray-400 block font-sans">Temporary Password</span>
-                            <span className="font-bold text-gray-900">{activationResult.user_credentials.temp_password}</span>
+                            <span className="text-[10px] text-[#64748B] block font-sans">Temporary Password</span>
+                            <span className="font-bold text-[#F7F9FC]">{activationResult.user_credentials.temp_password}</span>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleCopyText(activationResult?.user_credentials?.temp_password || "", "password")}
-                            className="text-gray-400 hover:text-indigo-600 p-1"
+                            className="text-[#64748B] hover:text-[#F7F9FC] p-1"
                             title="Copy Password"
                           >
                             <Copy className="w-3.5 h-3.5" />
@@ -2074,16 +2081,16 @@ export default function SettingsPage() {
                   )}
 
                   {/* Issued Active API Key */}
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2">
-                    <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                  <div className="p-4 bg-[#121C2D] border border-[#223047] rounded-xl space-y-2">
+                    <span className="text-xs font-bold text-[#F7F9FC] flex items-center gap-1.5">
                       <KeyRound className="w-3.5 h-3.5 text-[#F6821F]" /> Active {activationResult.api_key.plan_tier} Integration Key
                     </span>
-                    <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-gray-200 font-mono text-xs text-gray-900">
+                    <div className="flex items-center justify-between bg-[#080D17] px-3 py-2 rounded-lg border border-[#223047] font-mono text-xs text-[#F7F9FC]">
                       <span className="truncate mr-2">{activationResult.api_key.key}</span>
                       <button
                         type="button"
                         onClick={() => handleCopyText(activationResult.api_key.key, "key")}
-                        className="text-gray-400 hover:text-[#F6821F] shrink-0 p-1"
+                        className="text-[#64748B] hover:text-[#F6821F] shrink-0 p-1 cursor-pointer"
                         title="Copy Key"
                       >
                         <Copy className="w-4 h-4" />
@@ -2092,12 +2099,12 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Free Usage & Overage Billing Policy Callout */}
-                  <div className="p-3.5 bg-orange-50/60 border border-orange-200 rounded-xl text-xs space-y-1">
-                    <div className="flex items-center gap-1.5 font-bold text-gray-900">
+                  <div className="p-3.5 bg-[#F6821F]/10 border border-[#F6821F]/30 rounded-xl text-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-[#F7F9FC]">
                       <Sparkles className="w-4 h-4 text-[#F6821F]" />
                       <span>15 Audio Minutes Free Included</span>
                     </div>
-                    <p className="text-[11px] text-gray-600 leading-relaxed">
+                    <p className="text-[11px] text-[#94A3B8] leading-relaxed">
                       Your plan includes <b>15.0 minutes of initial audio streaming free of charge</b>. Ongoing usage beyond your included minutes is charged at <b>₹{activationResult.overage_rate_per_min_inr.toFixed(2)} / minute</b>.
                     </p>
                   </div>
@@ -2109,7 +2116,7 @@ export default function SettingsPage() {
                         setShowPlanModal(false);
                         setCheckoutStep("SELECT");
                       }}
-                      className="w-full bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md text-xs py-2.5 font-bold cursor-pointer"
+                      className="w-full bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md shadow-[#F6821F]/20 text-xs py-2.5 font-bold cursor-pointer"
                     >
                       Complete & Continue to Dashboard
                     </Button>
@@ -2123,17 +2130,17 @@ export default function SettingsPage() {
 
       {/* ─── MODAL 2: RECHARGE MODAL (REAL UPI COLLECT & UTR VERIFICATION) ─── */}
       {showTopupModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-lg overflow-hidden relative">
-            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#0D1422] rounded-2xl shadow-2xl border border-[#223047] w-full max-w-lg overflow-hidden relative text-[#F7F9FC]">
+            <div className="p-5 border-b border-[#1E293B] flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-gray-900">
+                <h3 className="text-base font-bold text-[#F7F9FC]">
                   {topupStep === "SELECT" && "Recharge Quota (Indian Rupees)"}
                   {topupStep === "COLLECT" && `UPI Collect — ₹${topupTab === "minutes" ? selectedMinutesTopup.price_inr : selectedTokensTopup.price_inr}`}
                   {topupStep === "VERIFY_UTR" && `Confirm Payment — ₹${topupPaymentOrder?.amount_inr.toFixed(2)}`}
                   {topupStep === "SUCCESS" && "Recharge Credited!"}
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-[#94A3B8] mt-0.5">
                   {topupStep === "SELECT" && "Select audio streaming minutes (₹2/min) or token recharge packs"}
                   {topupStep === "COLLECT" && "Send a real payment collect request to your UPI App"}
                   {topupStep === "VERIFY_UTR" && "Scan QR or approve in UPI app, then submit 12-digit bank UTR"}
@@ -2145,7 +2152,7 @@ export default function SettingsPage() {
                   setShowTopupModal(false);
                   setTopupStep("SELECT");
                 }}
-                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                className="p-1.5 text-[#94A3B8] hover:text-[#F7F9FC] rounded-lg hover:bg-[#121C2D] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2156,15 +2163,15 @@ export default function SettingsPage() {
               {topupStep === "SELECT" && (
                 <>
                   {/* Tab Selector: Minutes vs Tokens */}
-                  <div className="flex rounded-lg bg-gray-100 p-1">
+                  <div className="flex rounded-lg bg-[#121C2D] border border-[#223047] p-1">
                     <button
                       type="button"
                       onClick={() => setTopupTab("minutes")}
                       className={cn(
                         "flex-1 py-1.5 text-xs font-semibold rounded-md flex items-center justify-center gap-1.5 transition-colors cursor-pointer",
                         topupTab === "minutes"
-                          ? "bg-white text-gray-900 shadow-xs"
-                          : "text-gray-500 hover:text-gray-900"
+                          ? "bg-[#080D17] text-[#F7F9FC] border border-[#F6821F]/30 shadow-xs"
+                          : "text-[#94A3B8] hover:text-[#F7F9FC]"
                       )}
                     >
                       <Clock className="w-3.5 h-3.5 text-[#F6821F]" /> Audio Minutes (₹2/Min)
@@ -2175,8 +2182,8 @@ export default function SettingsPage() {
                       className={cn(
                         "flex-1 py-1.5 text-xs font-semibold rounded-md flex items-center justify-center gap-1.5 transition-colors cursor-pointer",
                         topupTab === "tokens"
-                          ? "bg-white text-gray-900 shadow-xs"
-                          : "text-gray-500 hover:text-gray-900"
+                          ? "bg-[#080D17] text-[#F7F9FC] border border-amber-500/30 shadow-xs"
+                          : "text-[#94A3B8] hover:text-[#F7F9FC]"
                       )}
                     >
                       <Coins className="w-3.5 h-3.5 text-amber-500" /> Token Quota (₹)
@@ -2198,15 +2205,15 @@ export default function SettingsPage() {
                           className={cn(
                             "p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all",
                             selectedMinutesTopup.minutes === pack.minutes
-                              ? "border-[#F6821F] bg-orange-50/40 shadow-xs"
-                              : "border-gray-200 hover:border-gray-300"
+                              ? "border-[#F6821F] bg-[#F6821F]/10 shadow-xs"
+                              : "border-[#223047] bg-[#121C2D]/50 hover:border-[#334155]"
                           )}
                         >
                           <div>
-                            <span className="text-sm font-bold text-gray-900 font-mono block">
+                            <span className="text-sm font-bold text-[#F7F9FC] font-mono block">
                               +{pack.minutes} Audio Minutes
                             </span>
-                            <span className="text-[11px] text-gray-500">{pack.label}</span>
+                            <span className="text-[11px] text-[#94A3B8]">{pack.label}</span>
                           </div>
                           <span className="text-base font-extrabold text-[#F6821F] font-mono">₹{pack.price_inr}</span>
                         </div>
@@ -2229,17 +2236,17 @@ export default function SettingsPage() {
                           className={cn(
                             "p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all",
                             selectedTokensTopup.tokens === pack.tokens
-                              ? "border-[#F6821F] bg-orange-50/40 shadow-xs"
-                              : "border-gray-200 hover:border-gray-300"
+                              ? "border-[#F6821F] bg-[#F6821F]/10 shadow-xs"
+                              : "border-[#223047] bg-[#121C2D]/50 hover:border-[#334155]"
                           )}
                         >
                           <div>
-                            <span className="text-sm font-bold text-gray-900 font-mono block">
+                            <span className="text-sm font-bold text-[#F7F9FC] font-mono block">
                               +{pack.tokens.toLocaleString()} Tokens
                             </span>
-                            <span className="text-[11px] text-gray-500">{pack.label}</span>
+                            <span className="text-[11px] text-[#94A3B8]">{pack.label}</span>
                           </div>
-                          <span className="text-base font-extrabold text-gray-900 font-mono">₹{pack.price_inr}</span>
+                          <span className="text-base font-extrabold text-[#F7F9FC] font-mono">₹{pack.price_inr}</span>
                         </div>
                       ))}
                     </div>
@@ -2250,7 +2257,7 @@ export default function SettingsPage() {
                       setTopupPaymentError(null);
                       setTopupStep("COLLECT");
                     }}
-                    className="w-full bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md text-xs font-semibold py-2.5 cursor-pointer mt-2"
+                    className="w-full bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md shadow-[#F6821F]/20 text-xs font-semibold py-2.5 cursor-pointer mt-2"
                   >
                     Proceed to UPI Payment — ₹{topupTab === "minutes" ? selectedMinutesTopup.price_inr : selectedTokensTopup.price_inr} &rarr;
                   </Button>
@@ -2261,14 +2268,14 @@ export default function SettingsPage() {
               {topupStep === "COLLECT" && (
                 <div className="space-y-4">
                   {/* Summary Box */}
-                  <div className="p-3.5 bg-orange-50/60 border border-orange-200 rounded-xl flex items-center justify-between">
+                  <div className="p-3.5 bg-[#F6821F]/10 border border-[#F6821F]/30 rounded-xl flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-bold text-gray-900 block">
+                      <span className="text-xs font-bold text-[#F7F9FC] block">
                         {topupTab === "minutes"
                           ? `+${selectedMinutesTopup.minutes} Audio Streaming Minutes`
                           : `+${selectedTokensTopup.tokens.toLocaleString()} Security Analysis Tokens`}
                       </span>
-                      <span className="text-[11px] text-gray-500">
+                      <span className="text-[11px] text-[#94A3B8]">
                         {topupTab === "minutes" ? "Usage rate: ₹2.00 / Min" : "API Operations Units"}
                       </span>
                     </div>
@@ -2280,21 +2287,21 @@ export default function SettingsPage() {
                   {/* UPI ID Input Form */}
                   <div className="space-y-3">
                     <div>
-                      <label className="text-xs font-bold text-gray-700 block mb-1">
-                        Payer Name <span className="text-gray-400 font-normal">(Optional)</span>
+                      <label className="text-xs font-bold text-[#F7F9FC] block mb-1">
+                        Payer Name <span className="text-[#64748B] font-normal">(Optional)</span>
                       </label>
                       <input
                         type="text"
                         value={topupPayerName}
                         onChange={(e) => setTopupPayerName(e.target.value)}
                         placeholder="e.g. Alex Kumar"
-                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 focus:outline-none focus:border-[#F6821F]"
+                        className="w-full px-3 py-2 bg-[#080D17] border border-[#223047] rounded-lg text-xs text-[#F7F9FC] placeholder-[#64748B] focus:outline-none focus:border-[#F6821F]"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-gray-700 block mb-1">
-                        Enter Your UPI ID (VPA) <span className="text-red-500">*</span>
+                      <label className="text-xs font-bold text-[#F7F9FC] block mb-1">
+                        Enter Your UPI ID (VPA) <span className="text-[#F6821F]">*</span>
                       </label>
                       <div className="relative">
                         <input
@@ -2305,10 +2312,10 @@ export default function SettingsPage() {
                             setTopupPaymentError(null);
                           }}
                           placeholder="e.g. alex@okaxis, 9876543210@paytm, name@okhdfcbank"
-                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-mono text-gray-900 focus:outline-none focus:border-[#F6821F]"
+                          className="w-full px-3 py-2 bg-[#080D17] border border-[#223047] rounded-lg text-xs font-mono text-[#F7F9FC] placeholder-[#64748B] focus:outline-none focus:border-[#F6821F]"
                         />
                       </div>
-                      <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-gray-500">
+                      <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-[#94A3B8]">
                         <Smartphone className="w-3.5 h-3.5 text-[#F6821F]" />
                         <span>Supports Google Pay, PhonePe, Paytm, BHIM, and any Indian bank UPI.</span>
                       </div>
@@ -2316,16 +2323,16 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Authentic Payment Verification Notice */}
-                  <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-xs flex items-start gap-2 text-amber-900">
-                    <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <p className="text-[11px] leading-relaxed">
+                  <div className="p-3 bg-amber-950/30 border border-amber-500/30 rounded-xl text-xs flex items-start gap-2 text-amber-200">
+                    <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-amber-300/80 leading-relaxed">
                       <b>Strict Payment Enforcement:</b> We dispatch an authentic collect request to your UPI app. Balance and tokens are <b>only credited</b> after your payment is completed and verified via Bank UTR reference.
                     </p>
                   </div>
 
                   {topupPaymentError && (
-                    <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    <div className="p-2.5 rounded-lg bg-red-950/40 border border-red-500/40 text-red-300 text-xs flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-400" />
                       <span>{topupPaymentError}</span>
                     </div>
                   )}
@@ -2335,7 +2342,7 @@ export default function SettingsPage() {
                       type="button"
                       variant="ghost"
                       onClick={() => setTopupStep("SELECT")}
-                      className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+                      className="text-xs text-[#94A3B8] hover:text-[#F7F9FC] hover:bg-[#121C2D] cursor-pointer"
                     >
                       &larr; Back to Packs
                     </Button>
@@ -2343,7 +2350,7 @@ export default function SettingsPage() {
                       type="button"
                       disabled={topupProcessing || !topupUpiId.trim()}
                       onClick={handleSendTopupUpiCollect}
-                      className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md text-xs py-2 px-5 font-bold cursor-pointer gap-2"
+                      className="bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md shadow-[#F6821F]/20 text-xs py-2 px-5 font-bold cursor-pointer gap-2"
                     >
                       {topupProcessing ? (
                         <span>Sending UPI Request...</span>
@@ -2359,16 +2366,16 @@ export default function SettingsPage() {
               {topupStep === "VERIFY_UTR" && topupPaymentOrder && (
                 <div className="space-y-4">
                   {/* Live Collect Status Banner */}
-                  <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl flex items-center justify-between">
+                  <div className="p-3 bg-blue-950/40 border border-blue-500/30 rounded-xl flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-ping" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" />
                       <div>
-                        <span className="text-xs font-bold text-blue-900 block">Collect Request Dispatched</span>
-                        <span className="text-[11px] text-blue-700 font-mono">To: {topupPaymentOrder.payer_upi_id}</span>
+                        <span className="text-xs font-bold text-blue-200 block">Collect Request Dispatched</span>
+                        <span className="text-[11px] text-blue-300/80 font-mono">To: {topupPaymentOrder.payer_upi_id}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-xs font-bold font-mono text-blue-900 bg-blue-100 px-2 py-1 rounded">
-                      <Clock className="w-3.5 h-3.5 text-blue-700" />
+                    <div className="flex items-center gap-1 text-xs font-bold font-mono text-blue-200 bg-blue-900/50 px-2 py-1 rounded border border-blue-500/30">
+                      <Clock className="w-3.5 h-3.5 text-blue-400" />
                       <span>
                         0{Math.floor(topupCountdown / 60)}:{(topupCountdown % 60).toString().padStart(2, "0")}
                       </span>
@@ -2376,8 +2383,8 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Scannable Dynamic UPI QR Code */}
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl flex flex-col items-center justify-center text-center">
-                    <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <div className="p-4 bg-[#121C2D] border border-[#223047] rounded-xl flex flex-col items-center justify-center text-center">
+                    <span className="text-[11px] font-bold text-[#F7F9FC] uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <QrCode className="w-3.5 h-3.5 text-[#F6821F]" /> Scan with Any UPI App to Pay
                     </span>
                     <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-200">
@@ -2388,17 +2395,17 @@ export default function SettingsPage() {
                         includeMargin={false}
                       />
                     </div>
-                    <div className="mt-2 text-xs text-gray-600 font-medium">
-                      Amount: <span className="font-bold text-gray-900 font-mono">₹{topupPaymentOrder.amount_inr.toFixed(2)}</span>
-                      {" • "}Payee: <span className="font-mono text-gray-700">{topupPaymentOrder.merchant_vpa}</span>
+                    <div className="mt-2 text-xs text-[#94A3B8] font-medium">
+                      Amount: <span className="font-bold text-[#F7F9FC] font-mono">₹{topupPaymentOrder.amount_inr.toFixed(2)}</span>
+                      {" • "}Payee: <span className="font-mono text-[#F6821F]">{topupPaymentOrder.merchant_vpa}</span>
                     </div>
                   </div>
 
                   {/* UTR Reference Input */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-800 flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#F7F9FC] flex items-center justify-between">
                       <span>Enter 12-Digit Bank UTR / Reference Number:</span>
-                      <span className="text-[10px] text-gray-400 font-normal">Found in UPI App receipt</span>
+                      <span className="text-[10px] text-[#64748B] font-normal">Found in UPI App receipt</span>
                     </label>
                     <div className="relative">
                       <input
@@ -2409,17 +2416,17 @@ export default function SettingsPage() {
                           setTopupPaymentError(null);
                         }}
                         placeholder="e.g. 425519827103"
-                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-xs font-mono font-bold tracking-wider text-gray-900 focus:outline-none focus:border-[#F6821F]"
+                        className="w-full px-3 py-2 bg-[#080D17] border border-[#223047] rounded-md text-xs font-mono font-bold tracking-wider text-[#F7F9FC] placeholder-[#64748B] focus:outline-none focus:border-[#F6821F]"
                       />
                     </div>
-                    <p className="text-[11px] text-gray-500">
-                      Demo / testing reference: <span className="font-mono font-bold text-gray-700">425519827103</span>
+                    <p className="text-[11px] text-[#94A3B8]">
+                      Demo / testing reference: <span className="font-mono font-bold text-[#F7F9FC]">425519827103</span>
                     </p>
                   </div>
 
                   {topupPaymentError && (
-                    <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    <div className="p-2.5 rounded-lg bg-red-950/40 border border-red-500/40 text-red-300 text-xs flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-400" />
                       <span>{topupPaymentError}</span>
                     </div>
                   )}
@@ -2429,7 +2436,7 @@ export default function SettingsPage() {
                       type="button"
                       variant="ghost"
                       onClick={() => setTopupStep("COLLECT")}
-                      className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+                      className="text-xs text-[#94A3B8] hover:text-[#F7F9FC] hover:bg-[#121C2D] cursor-pointer"
                     >
                       &larr; Modify UPI ID
                     </Button>
@@ -2452,32 +2459,32 @@ export default function SettingsPage() {
               {/* STEP 4: RECHARGE SUCCESS RECEIPT */}
               {topupStep === "SUCCESS" && topupSuccessDetails && (
                 <div className="space-y-4">
-                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <div className="p-4 bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
                       <Check className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-emerald-900">Payment Verified & Quota Credited!</h4>
-                      <p className="text-xs text-emerald-700 mt-0.5">
+                      <h4 className="text-sm font-bold text-emerald-300">Payment Verified & Quota Credited!</h4>
+                      <p className="text-xs text-emerald-400/80 mt-0.5">
                         ₹{topupSuccessDetails.amount_paid.toFixed(2)} received via UPI (UTR: {topupSuccessDetails.utr}).
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2 text-xs">
-                    <div className="flex justify-between py-1 border-b border-gray-200">
-                      <span className="text-gray-500">Package Credited:</span>
-                      <span className="font-bold text-emerald-700 font-mono">{topupSuccessDetails.units_added}</span>
+                  <div className="p-4 bg-[#121C2D] border border-[#223047] rounded-xl space-y-2 text-xs">
+                    <div className="flex justify-between py-1 border-b border-[#1E293B]">
+                      <span className="text-[#94A3B8]">Package Credited:</span>
+                      <span className="font-bold text-emerald-400 font-mono">{topupSuccessDetails.units_added}</span>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-gray-200">
-                      <span className="text-gray-500">Available Audio Streaming:</span>
-                      <span className="font-bold text-gray-900 font-mono">
+                    <div className="flex justify-between py-1 border-b border-[#1E293B]">
+                      <span className="text-[#94A3B8]">Available Audio Streaming:</span>
+                      <span className="font-bold text-[#F7F9FC] font-mono">
                         {(activeKey?.minutes_remaining ?? 15.0).toFixed(1)} Minutes
                       </span>
                     </div>
                     <div className="flex justify-between py-1">
-                      <span className="text-gray-500">Available Token Balance:</span>
-                      <span className="font-bold text-gray-900 font-mono">
+                      <span className="text-[#94A3B8]">Available Token Balance:</span>
+                      <span className="font-bold text-[#F7F9FC] font-mono">
                         {activeKey?.tokens_remaining.toLocaleString()} Tokens
                       </span>
                     </div>
@@ -2490,7 +2497,7 @@ export default function SettingsPage() {
                         setShowTopupModal(false);
                         setTopupStep("SELECT");
                       }}
-                      className="w-full bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md text-xs py-2.5 font-bold cursor-pointer"
+                      className="w-full bg-[#F6821F] hover:bg-[#E85D04] text-white shadow-md shadow-[#F6821F]/20 text-xs py-2.5 font-bold cursor-pointer"
                     >
                       Done & Return to Dashboard
                     </Button>
