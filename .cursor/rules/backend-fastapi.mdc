@@ -1,0 +1,27 @@
+---
+description: FastAPI backend conventions for VoxGuard
+globs: backend/**/*.py
+alwaysApply: false
+---
+
+# Backend FastAPI
+
+## Structure
+
+- Entry: `backend/main.py` — mounts routers, health, WebSocket
+- Routers: `backend/routers/{auth,analyze,calls,identities,settings,keys,notifications}.py`
+- Schemas: `backend/models.py`
+- DB: `backend/database.py` — dual SQLite/Postgres wrappers
+
+## Conventions
+
+- Keep SQL with `?` placeholders (Postgres wrapper converts to `%s`)
+- Auth is opaque DB sessions (`sessions` table), not JWT
+- Analysis pipeline order: AASIST → ECAPA → NLP → AMVTF → spectrogram
+- Background alerts: call create may trigger `trigger_call_alert`
+- Do not hardcode production secrets; use env (`DATABASE_URL`, `SECRET_KEY`, SMTP_*)
+
+## When changing analyze
+
+- Preserve response shape expected by `echoguard/src/lib/api.ts` (`AudioAnalysisResponse`)
+- Update fusion rationale text carefully; frontend maps `actionType` to risk UI

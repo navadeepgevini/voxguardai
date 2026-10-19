@@ -1,0 +1,39 @@
+---
+description: AMVTF detection engine rules for authenticity, identity, NLP, fusion
+globs: backend/engines/**/*
+alwaysApply: false
+---
+
+# AMVTF Engines
+
+## Fusion (`amvtf.py`)
+
+With target profile: `0.40 acoustic + 0.35 identity + 0.25 context`  
+Without target: human-heavy → context-weighted; synthetic-heavy → acoustic-weighted
+
+Verdicts:
+
+- authenticity < 50 → CRITICAL / TERMINATE
+- context ≥ 70 or fused ≥ 60 → CRITICAL / TERMINATE
+- context ≥ 38 or fused ≥ 35 or identity mismatch → WARNING / STEP_UP
+- else SAFE / ALLOW
+
+## AASIST (`aasist.py`)
+
+- Decode mono 16 kHz; heuristics (jitter, STFT hi ratio, kurtosis, etc.)
+- Live path may use `trained_live_classifier.joblib` if present
+- `calibrated_thresholds.json` may exist unused — wire carefully if enabling
+
+## ECAPA (`ecapa.py`)
+
+- Embedding from FFT/mel-style projection; cosine similarity 0–100
+- Match threshold default ~70; store vectors on `voice_profiles`
+
+## NLP (`nlp.py`)
+
+- Google ASR + `THREAT_DICTIONARY` / category weights (OTP, UPI, digital arrest, etc.)
+- Hindi + English locale awareness matters for this product
+
+## Spectrogram (`spectrogram.py`)
+
+- STFT PNG base64 `data_url` + metadata for forensic UI

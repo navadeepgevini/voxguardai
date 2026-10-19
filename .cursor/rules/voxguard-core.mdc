@@ -1,0 +1,36 @@
+---
+description: VoxGuard / EchoGuard product context and hard constraints for every session
+alwaysApply: true
+---
+
+# VoxGuard Core
+
+You are working in **VoxGuard / EchoGuard AI** (AMVTF v2.4) — a voice deepfake + identity + scam-language SOC platform.
+
+## Stack truth
+
+- Backend: `backend/` FastAPI on port 8000
+- Frontend: `echoguard/` Next.js 16 on port 3000
+- DB: SQLite (`backend/voxguard.db`) or Postgres when `DATABASE_URL` is set
+
+## Engines (code reality)
+
+- `engines/aasist.py` — authenticity / anti-spoof (heuristics + optional sklearn joblib)
+- `engines/ecapa.py` — 192-dim speaker embedding + cosine match (not a full pretrained ECAPA net unless weights are present)
+- `engines/nlp.py` — ASR (SpeechRecognition) + scam keyword dictionary
+- `engines/amvtf.py` — fuses signals → SAFE / WARNING / CRITICAL
+- `engines/spectrogram.py` — STFT PNG evidence
+
+Do not oversell marketing labels (GNN / DistilBERT) beyond what the code implements.
+
+## Never
+
+- Commit `.env`, credentials, `voxguard.db`, or large training audio
+- Bypass auth/session hardening when asked to “just make it work” for production
+- Rewrite the whole monorepo for a local fix
+
+## Prefer
+
+- Small diffs matching existing router / `api.ts` patterns
+- Dual SQLite/Postgres SQL (`?` placeholders)
+- Clear verdict rationale in analysis responses

@@ -1,0 +1,43 @@
+{
+  "timestamp_unix": 1792262437.68726,
+  "modelVersion": "sklearn-softvote-cv93.1-n139064",
+  "trainingDataset": "Trained on Multi-Platform AI (OpenAI, Gemini, Claude, ElevenLabs, ASVspoof) - 139,064 Chunks (93.1% CV Acc)",
+  "modelLoaded": true,
+  "smoke": {
+    "silence": {
+      "detectionState": "WAITING_FOR_SPEECH",
+      "syntheticProbability": 50.0,
+      "authenticity": 50.0,
+      "latency_ms": 10.72,
+      "modelVersion": "sklearn-softvote-cv93.1-n139064"
+    },
+    "short": {
+      "detectionState": "LIKELY_AI_GENERATED",
+      "syntheticProbability": 65.0,
+      "authenticity": 48.0,
+      "latency_ms": 48.03,
+      "modelVersion": "sklearn-softvote-cv93.1-n139064"
+    },
+    "tone_180hz": {
+      "detectionState": "LIKELY_AI_GENERATED",
+      "syntheticProbability": 65.0,
+      "authenticity": 48.0,
+      "latency_ms": 37.89,
+      "modelVersion": "sklearn-softvote-cv93.1-n139064"
+    },
+    "session_after_silence": {
+      "sessionId": "smoke",
+      "sessionSyntheticProbability": 50.0,
+      "sessionDetectionState": "WAITING_FOR_SPEECH",
+      "voicedSecondsAccumulated": 0.0,
+      "windowsObserved": 3,
+      "consecutiveHigh": 0,
+      "consecutiveLow": 0
+    }
+  },
+  "labeled_eval": {
+    "n_files": 0,
+    "message": "No labeled audio under C:\\voxguardai\\data\\eval. See docs/ai/DATASET_STRATEGY.md."
+  },
+  "disclaimer": "Smoke fixtures are not deepfake accuracy. Labeled metrics appear only when licensed WAVs exist under data/eval. ChatGPT/Gemini rates are absent without authorized samples."
+}

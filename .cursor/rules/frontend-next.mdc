@@ -1,0 +1,29 @@
+---
+description: EchoGuard Next.js SOC dashboard conventions
+globs: echoguard/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend EchoGuard
+
+## Structure
+
+- App Router under `echoguard/src/app/`
+- Pages: `/` Live Analysis, `/call-history`, `/identities`, `/settings`, `/login`
+- API client: `echoguard/src/lib/api.ts` → `NEXT_PUBLIC_API_URL`
+- Auth: `auth-context.tsx` + `voxguard_auth_token` in localStorage
+- Shell: `app-shell.tsx` + `sidebar.tsx`
+
+## Conventions
+
+- FastAPI calls use `API_BASE`; notification helpers often use relative `/api/notifications/*`
+- Brand accent: `#F6821F`
+- Risk states: `IDLE | SAFE | WARNING | CRITICAL`
+- Soft auth exists (default operator); do not assume hard login gating unless changing that deliberately
+- Prefer existing UI primitives in `components/ui/`
+
+## Live Analysis
+
+- Upload / record / live mic / text threat test live in `app/page.tsx`
+- After analyze: `saveCall` then optional `triggerAnalysisAlert`
+- Spectrograms: client preview (`AudioPreviewSpectrogram`) vs server evidence (`AnalysisEvidenceSpectrogram`)

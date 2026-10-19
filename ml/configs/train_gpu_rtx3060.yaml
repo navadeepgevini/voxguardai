@@ -1,0 +1,23 @@
+# RTX 3060 Laptop 6GB — conservative defaults
+experiment_name: rtx3060_aasist_l_finetune
+seed: 42
+device: cuda
+backend: torch_aasist_l
+manifest: data/eval/manifest.csv
+max_samples: null
+feature_window_s: 4.0
+batch_size: 4
+epochs: 20
+mixed_precision: true
+gradient_accumulation: 4
+gradient_checkpointing: true
+learning_rate: 1.0e-4
+weight_decay: 1.0e-4
+early_stopping_patience: 5
+checkpoint_dir: artifacts/checkpoints
+log_dir: artifacts/logs
+max_vram_gb: 5.5
+notes: >
+  Prefer AASIST-L (~85k params) or small SSL head over full WavLM fine-tune.
+  Measure peak VRAM; reduce batch_size before increasing model size.
+  Never tune on final test split.

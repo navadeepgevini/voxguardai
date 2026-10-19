@@ -1,0 +1,15 @@
+# CPU smoke training config — verifies pipeline mechanics, not accuracy claims.
+experiment_name: cpu_smoke_sklearn_refit
+seed: 42
+device: cpu
+backend: sklearn_softvote  # or torch_aasist_l on GPU laptop
+manifest: data/eval/manifest.csv
+max_samples: 64
+feature_window_s: 1.8
+batch_size: 8
+epochs: 1
+mixed_precision: false
+gradient_accumulation: 1
+checkpoint_dir: artifacts/checkpoints
+log_dir: artifacts/logs
+notes: "Do not use held-out test for hyperparameter search."

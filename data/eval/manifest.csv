@@ -1,0 +1,3 @@
+path,label,generator,language,codec,duration_s,sha256,license,split
+human/example.wav,0,human,en,wav,3.0,,internal-authorized,train
+ai_elevenlabs/example.wav,1,elevenlabs,en,wav,3.0,,internal-authorized,val
