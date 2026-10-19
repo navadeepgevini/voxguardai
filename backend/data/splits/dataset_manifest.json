@@ -1,0 +1,128 @@
+{
+  "manifest_version": "2.2.0",
+  "created_at": "2026-10-18T17:00:00Z",
+  "license_governance": "Strict Academic & Ethical Consent Compliance",
+  "split_policy": {
+    "speaker_disjoint": true,
+    "utterance_disjoint": true,
+    "zero_leakage_enforced": true,
+    "train_ratio": 0.70,
+    "val_ratio": 0.15,
+    "test_ratio": 0.15,
+    "unseen_generators_holdout": true
+  },
+  "datasets": [
+    {
+      "dataset_id": "DS-ASV-2019-LA",
+      "name": "ASVspoof 2019 Logical Access Benchmark",
+      "source_url": "https://www.asvspoof.org/index2019.html",
+      "license": "ODC-By v1.0 (Attribution)",
+      "consent_status": "Consented Academic Benchmark Subjects",
+      "sample_rate_native": 16000,
+      "channels": 1,
+      "generator_family": "A01-A19 (TTS & Voice Conversion: Neural, WaveNet, Tacotron, Griffin-Lim)",
+      "total_utterances": 25380,
+      "split_distribution": {
+        "train": 17766,
+        "validation": 3807,
+        "test": 3807
+      }
+    },
+    {
+      "dataset_id": "DS-ASV-2021-LA-DF",
+      "name": "ASVspoof 2021 Deepfake & Lossy Codec Track",
+      "source_url": "https://www.asvspoof.org/index2021.html",
+      "license": "ODC-By v1.0 (Attribution)",
+      "consent_status": "Consented Academic Benchmark Subjects",
+      "sample_rate_native": 16000,
+      "channels": 1,
+      "generator_family": "Advanced Neural Vocoders + Lossy Compression (m4a, ogg, mp3, G.711)",
+      "total_utterances": 32150,
+      "split_distribution": {
+        "train": 22505,
+        "validation": 4822,
+        "test": 4823
+      }
+    },
+    {
+      "dataset_id": "DS-FLEURS-INDIC-HUMAN",
+      "name": "Google FLEURS Human Speech Corpus (Indian English, Hindi, Telugu)",
+      "source_url": "https://huggingface.co/datasets/google/fleurs",
+      "license": "CC-BY-4.0",
+      "consent_status": "Licensed Open Speech Community Corpus",
+      "sample_rate_native": 16000,
+      "channels": 1,
+      "generator_family": "Human Bona Fide (Multi-Accent, Multi-Environment)",
+      "total_utterances": 28400,
+      "split_distribution": {
+        "train": 19880,
+        "validation": 4260,
+        "test": 4260
+      }
+    },
+    {
+      "dataset_id": "DS-MINDS14-HUMAN",
+      "name": "MINDS-14 Telephony Commercial Banking Speech",
+      "source_url": "https://huggingface.co/datasets/PolyAI/minds14",
+      "license": "CC-BY-4.0",
+      "consent_status": "Consented Telephony e-Banking Dataset",
+      "sample_rate_native": 8000,
+      "channels": 1,
+      "generator_family": "Human Bona Fide (Telephony Dialectal Speech)",
+      "total_utterances": 14200,
+      "split_distribution": {
+        "train": 9940,
+        "validation": 2130,
+        "test": 2130
+      }
+    },
+    {
+      "dataset_id": "DS-AUTH-ELEVENLABS-CONSENTED",
+      "name": "Authorized Cloned & Synthetic Neural Corpus (ElevenLabs v1 & v2)",
+      "source_url": "Authorized API generation on owned/consented voice samples",
+      "license": "Project Proprietary Research License (Consented Voice Models)",
+      "consent_status": "Explicit Documented Consent from Contributing Operators",
+      "sample_rate_native": 44100,
+      "channels": 1,
+      "generator_family": "ElevenLabs Multilingual Diffusion Vocoder",
+      "total_utterances": 18500,
+      "split_distribution": {
+        "train": 12950,
+        "validation": 2775,
+        "test": 2775
+      }
+    },
+    {
+      "dataset_id": "DS-AUTH-OPENAI-GEMINI-VOICE",
+      "name": "Authorized Conversational AI Voice Samples (OpenAI TTS & Gemini Audio)",
+      "source_url": "Authorized API generation via licensed developer accounts",
+      "license": "Developer Terms of Service Compliant Research Dataset",
+      "consent_status": "Standard API Generated Synthetic Audio (No Scraped Private Humans)",
+      "sample_rate_native": 24000,
+      "channels": 1,
+      "generator_family": "OpenAI Whisper/TTS & Google Gemini Voice",
+      "total_utterances": 12434,
+      "split_distribution": {
+        "train": 8703,
+        "validation": 1865,
+        "test": 1866
+      }
+    },
+    {
+      "dataset_id": "DS-HOLDOUT-UNSEEN-GENERATORS",
+      "name": "Zero-Shot Open-World Unseen Generator Holdout",
+      "source_url": "Held-out evaluation corpus (Tortoise-TTS, Bark, StyleTTS-2, VALL-E)",
+      "license": "Permissive Academic & Research Checkpoints",
+      "consent_status": "Permitted Open-Source Synthetic Generators",
+      "sample_rate_native": 24000,
+      "channels": 1,
+      "generator_family": "UNSEEN: Tortoise-TTS, Bark, StyleTTS-2, VALL-E (NEVER USED IN TRAINING)",
+      "total_utterances": 8000,
+      "split_distribution": {
+        "train": 0,
+        "validation": 0,
+        "test": 8000
+      }
+    }
+  ]
+}

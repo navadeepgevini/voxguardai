@@ -1,0 +1,17 @@
+{
+  "split": "TRAIN",
+  "total_speakers": 280,
+  "speaker_ids": [
+    "SPK-ASV19-LA-001", "SPK-ASV19-LA-002", "SPK-ASV19-LA-003", "SPK-ASV19-LA-004", "SPK-ASV19-LA-005",
+    "SPK-ASV19-LA-006", "SPK-ASV19-LA-007", "SPK-ASV19-LA-008", "SPK-ASV19-LA-009", "SPK-ASV19-LA-010",
+    "SPK-ASV21-DF-001", "SPK-ASV21-DF-002", "SPK-ASV21-DF-003", "SPK-ASV21-DF-004", "SPK-ASV21-DF-005",
+    "SPK-FLEURS-IN-001", "SPK-FLEURS-IN-002", "SPK-FLEURS-IN-003", "SPK-FLEURS-IN-004", "SPK-FLEURS-IN-005",
+    "SPK-MINDS14-001", "SPK-MINDS14-002", "SPK-MINDS14-003", "SPK-MINDS14-004", "SPK-MINDS14-005",
+    "SPK-OPERATOR-CONSENT-01", "SPK-OPERATOR-CONSENT-02"
+  ],
+  "generators_included": [
+    "ASVspoof_A01_Neural", "ASVspoof_A02_WaveNet", "ASVspoof_A03_Tacotron",
+    "ElevenLabs_Multilingual_v1", "ElevenLabs_Multilingual_v2",
+    "OpenAI_Whisper_TTS", "Google_Cloud_Neural2", "HiFiGAN_Vocoder", "ParallelWaveGAN"
+  ]
+}

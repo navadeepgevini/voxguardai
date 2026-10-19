@@ -1,0 +1,45 @@
+{
+  "project": "VoxGuard AI",
+  "version": "1.0.0",
+  "last_updated": "2026-10-18T15:40:00+05:30",
+  "active_stack": {
+    "frontend": "Next.js 16.3.4 (Turbopack, App Router, React 19)",
+    "styling": "Tailwind CSS v4 + base-nova shadcn/ui components",
+    "backend": "FastAPI (Python 3.13 / Uvicorn)",
+    "database": "SQLite (backend/voxguard.db) with Postgres fallback",
+    "alerting": "Resend API v6.32.0 (HTML incident notification emails)",
+    "audio_forensics": "Web Audio Hann FFT (client preview) & Librosa STFT (backend evidence)"
+  },
+  "memory_index": [
+    {
+      "id": "MEM-001",
+      "category": "architecture",
+      "file": "decisions.md",
+      "title": "Dual Spectrogram Pipeline Architecture"
+    },
+    {
+      "id": "MEM-002",
+      "category": "architecture",
+      "file": "decisions.md",
+      "title": "Automated Email Alerting on Deepfake Detection"
+    },
+    {
+      "id": "MEM-003",
+      "category": "environment",
+      "file": "environment.md",
+      "title": "Local Port Allocation and Development Tooling"
+    },
+    {
+      "id": "MEM-004",
+      "category": "worklog",
+      "file": "worklog.md",
+      "title": "Implementation History and Verification Runs"
+    },
+    {
+      "id": "MEM-005",
+      "category": "limitations",
+      "file": "bugs-and-limitations.md",
+      "title": "Known Audio Codec and Retention Boundaries"
+    }
+  ]
+}
